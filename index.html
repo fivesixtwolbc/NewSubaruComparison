@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>36-Month Horizon & Capital Recuperation</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #f3f4f6; }
+        .card { background: white; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); padding: 24px; margin-bottom: 24px; border: 1px solid #e5e7eb; }
+        .metric { font-size: 1.875rem; font-weight: 900; color: #1f2937; }
+        .metric-label { font-size: 0.75rem; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 700; }
+        .danger { color: #dc2626; }
+        .success { color: #16a34a; }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+
+    <div class="max-w-5xl mx-auto relative">
+        <header class="mb-8 text-center md:text-left">
+            <h1 class="text-3xl font-bold text-gray-800">The 36-Month Horizon</h1>
+            <p class="text-gray-600 mt-2">Capital Strategy, Interest Arbitrage, & Recuperation</p>
+        </header>
+
+        <div class="card bg-gray-800 text-white mb-6">
+            <h2 class="text-xl font-bold mb-4 text-gray-100">Vehicle OTD Pricing Setup</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div>
+                    <label class="block text-sm font-medium text-gray-300">New Car OTD (0.9% for 36mo): <span id="newPriceVal" class="font-bold text-blue-400">$36,000</span></label>
+                    <input type="range" id="newPriceInput" min="32000" max="42000" step="500" value="36000" class="w-full mt-2 cursor-pointer">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-300">CPO Car OTD (4.24% for 63mo): <span id="cpoPriceVal" class="font-bold text-green-400">$27,000</span></label>
+                    <input type="range" id="cpoPriceInput" min="22000" max="32000" step="500" value="27000" class="w-full mt-2 cursor-pointer">
+                </div>
+            </div>
+        </div>
+
+        <div class="card bg-blue-50 border-blue-200">
+            <h2 class="text-xl font-bold text-blue-900 mb-2">The 0.9% Interest Arbitrage (New Car)</h2>
+            <p class="text-sm text-blue-700 mb-6">This shows exactly why keeping $20,000 in the Amex HYSA while taking the 0.9% loan makes mathematical sense over the 36-month term.</p>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="bg-white p-4 rounded shadow-sm text-center border border-gray-100">
+                    <span class="block metric-label mb-1 text-red-500">Total Interest Paid to Bank</span>
+                    <span class="metric text-gray-800" id="intPaid"></span>
+                    <span class="block text-xs text-gray-400 mt-1">0.9% over 36 months</span>
+                </div>
+                <div class="bg-white p-4 rounded shadow-sm text-center border border-gray-100">
+                    <span class="block metric-label mb-1 text-green-500">Total Interest Earned in HYSA</span>
+                    <span class="metric text-gray-800" id="intEarned"></span>
+                    <span class="block text-xs text-gray-400 mt-1">3.25% over 36 months</span>
+                </div>
+                <div class="bg-blue-600 p-4 rounded shadow-sm text-center text-white">
+                    <span class="block text-xs uppercase tracking-wide opacity-80 font-bold mb-1">Net Wealth Gained</span>
+                    <span class="metric text-white" id="netInterest"></span>
+                    <span class="block text-xs opacity-80 mt-1">The bank pays you to borrow.</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            
+            <div class="card mb-0">
+                <h2 class="text-xl font-bold text-gray-800 border-b pb-2 mb-4">New Car Hub (Month 1 to 36)</h2>
+                <div class="mb-6">
+                    <label class="block text-sm font-medium text-gray-700">Monthly Contribution: <span id="newContribVal" class="font-bold text-blue-600">$530</span></label>
+                    <input type="range" id="newContrib" min="420" max="620" step="10" value="530" class="w-full mt-2 cursor-pointer">
+                </div>
+                <div class="flex justify-between mb-2">
+                    <div class="text-sm text-gray-500">Monthly Payment:</div>
+                    <div class="font-bold text-gray-800" id="newPmtStr"></div>
+                </div>
+                <div class="flex justify-between mb-4 border-b pb-4">
+                    <div class="text-sm text-gray-500">Min HYSA Balance:</div>
+                    <div class="font-bold" id="newMinBal"></div>
+                </div>
+                <div class="flex justify-between">
+                    <div class="text-sm font-bold text-gray-700">Cash Balance at Mo 36:</div>
+                    <div class="text-2xl font-black text-blue-600" id="newBal36"></div>
+                </div>
+                <div class="mt-4 h-32">
+                    <canvas id="chartNew36"></canvas>
+                </div>
+            </div>
+
+            <div class="card mb-0">
+                <h2 class="text-xl font-bold text-gray-800 border-b pb-2 mb-4">CPO Hub (Month 1 to 36)</h2>
+                <div class="mb-6">
+                    <label class="block text-sm font-medium text-gray-700">Monthly Contribution: <span id="cpoContribVal" class="font-bold text-green-600">$350</span></label>
+                    <input type="range" id="cpoContrib" min="250" max="450" step="10" value="350" class="w-full mt-2 cursor-pointer">
+                </div>
+                <div class="flex justify-between mb-2">
+                    <div class="text-sm text-gray-500">Monthly Payment:</div>
+                    <div class="font-bold text-gray-800" id="cpoPmtStr"></div>
+                </div>
+                <div class="flex justify-between mb-4 border-b pb-4">
+                    <div class="text-sm text-gray-500">Min HYSA Balance:</div>
+                    <div class="font-bold" id="cpoMinBal"></div>
+                </div>
+                <div class="flex justify-between">
+                    <div class="text-sm font-bold text-gray-700">Cash Balance at Mo 36:</div>
+                    <div class="text-2xl font-black text-green-600" id="cpoBal36"></div>
+                </div>
+                <div class="mt-4 h-32">
+                    <canvas id="chartCpo36"></canvas>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="card bg-gray-900 text-white">
+            <h2 class="text-2xl font-bold mb-2">Phase 2: Capital Recuperation (Months 37+)</h2>
+            <p class="text-gray-400 text-sm mb-6">At Month 36, the New Car is completely paid off. You no longer have a $1,000+ car payment draining the account. How fast can you rebuild the Amex HYSA back to $20,000?</p>
+            
+            <div class="bg-gray-800 p-6 rounded-lg border border-gray-700">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-2">Post-Loan Monthly Contribution <br><span class="text-xs text-gray-500 font-normal">(Redirecting the old car payment into savings)</span></label>
+                        <div class="flex items-center space-x-4">
+                            <input type="range" id="recupContrib" min="400" max="1500" step="50" value="1000" class="w-full cursor-pointer">
+                            <span id="recupContribVal" class="text-2xl font-bold text-blue-400 w-24 text-right">$1,000</span>
+                        </div>
+                    </div>
+                    
+                    <div class="text-center md:text-right border-t md:border-t-0 md:border-l border-gray-700 pt-4 md:pt-0 pl-0 md:pl-8">
+                        <span class="block text-sm uppercase tracking-wide text-gray-400 font-semibold mb-1">Time to Rebuild to $20,000</span>
+                        <span class="text-5xl font-black text-white" id="recupMonths"></span>
+                        <span class="block text-sm text-gray-400 mt-2">Months after loan ends</span>
+                    </div>
+                </div>
+            </div>
+            <div class="mt-4 text-xs text-gray-500 text-center">
+                *Calculation assumes starting with the exact Month 36 balance from the New Car simulator above, compounding at 3.25% APY.
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        const format = (v) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(v);
+        
+        let chartNew, chartCpo;
+        const hysaApy = 0.0325;
+
+        function calcLoanPmt(principal, rate, months) {
+            const mRate = (rate / 100) / 12;
+            return principal * (mRate * Math.pow(1 + mRate, months)) / (Math.pow(1 + mRate, months) - 1);
+        }
+
+        function simulate36(startCash, contrib, pmt, months) {
+            let bal = startCash;
+            let min = startCash;
+            let history = [startCash];
+            let totalIntEarned = 0;
+            const mRate = hysaApy / 12;
+
+            for (let i = 1; i <= 36; i++) {
+                let interest = bal > 0 ? bal * mRate : 0;
+                totalIntEarned += interest;
+                let draw = i <= months ? pmt : 0; 
+                bal = bal + interest + contrib - draw;
+                if (bal < min) min = bal;
+                history.push(bal);
+            }
+            return { final: bal, min: min, earned: totalIntEarned, history: history };
+        }
+
+        function calcRecuperation(startBal, monthlyContrib, target) {
+            if (startBal >= target) return 0;
+            let bal = startBal;
+            let months = 0;
+            const mRate = hysaApy / 12;
+            
+            // Failsafe to prevent infinite loops if contrib is 0
+            if(monthlyContrib <= 0 && bal < target) return ">100";
+
+            while (bal < target && months < 240) { // 20 year cap
+                bal = bal + (bal * mRate) + monthlyContrib;
+                months++;
+            }
+            return months;
+        }
+
+        function initCharts() {
+            const ctxN = document.getElementById('chartNew36').getContext('2d');
+            chartNew = new Chart(ctxN, { type: 'line', data: { labels: Array.from({length: 37}, (_, i) => i), datasets: [{ label: 'HYSA', borderColor: '#3b82f6', backgroundColor: 'rgba(59,130,246,0.1)', fill: true, tension: 0.1 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { display: false }, y: { grid: { color: c => c.tick.value === 0 ? '#ef4444' : '#f3f4f6' } } } } });
+
+            const ctxC = document.getElementById('chartCpo36').getContext('2d');
+            chartCpo = new Chart(ctxC, { type: 'line', data: { labels: Array.from({length: 37}, (_, i) => i), datasets: [{ label: 'HYSA', borderColor: '#10b981', backgroundColor: 'rgba(16,185,129,0.1)', fill: true, tension: 0.1 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { display: false } } } });
+        }
+
+        function updateAll() {
+            // Inputs
+            const pNew = Number(document.getElementById('newPriceInput').value);
+            const pCpo = Number(document.getElementById('cpoPriceInput').value);
+            const cNew = Number(document.getElementById('newContrib').value);
+            const cCpo = Number(document.getElementById('cpoContrib').value);
+            const cRecup = Number(document.getElementById('recupContrib').value);
+
+            // Labels
+            document.getElementById('newPriceVal').innerText = format(pNew);
+            document.getElementById('cpoPriceVal').innerText = format(pCpo);
+            document.getElementById('newContribVal').innerText = format(cNew);
+            document.getElementById('cpoContribVal').innerText = format(cCpo);
+            document.getElementById('recupContribVal').innerText = format(cRecup);
+
+            // Loan Calcs
+            const pmtNew = calcLoanPmt(pNew, 0.9, 36);
+            const pmtCpo = calcLoanPmt(pCpo - 10000, 4.24, 63);
+            
+            document.getElementById('newPmtStr').innerText = format(pmtNew);
+            document.getElementById('cpoPmtStr').innerText = format(pmtCpo);
+
+            // Simulate 36 Months
+            const simNew = simulate36(20000, cNew, pmtNew, 36);
+            const simCpo = simulate36(10000, cCpo, pmtCpo, 63); // Paid for 36/63 mos
+
+            // UI Updates New
+            document.getElementById('newMinBal').innerText = format(simNew.min);
+            document.getElementById('newMinBal').className = `font-bold ${simNew.min < 0 ? 'danger' : 'success'}`;
+            document.getElementById('newBal36').innerText = format(simNew.final);
+            chartNew.data.datasets[0].data = simNew.history;
+            chartNew.update();
+
+            // UI Updates CPO
+            document.getElementById('cpoMinBal').innerText = format(simCpo.min);
+            document.getElementById('cpoBal36').innerText = format(simCpo.final);
+            chartCpo.data.datasets[0].data = simCpo.history;
+            chartCpo.update();
+
+            // Arbitrage Math (New Car)
+            const totalPaidBank = (pmtNew * 36) - pNew;
+            document.getElementById('intPaid').innerText = format(totalPaidBank);
+            document.getElementById('intEarned').innerText = format(simNew.earned);
+            document.getElementById('netInterest').innerText = format(simNew.earned - totalPaidBank);
+
+            // Recuperation Math
+            const monthsToRecover = calcRecuperation(simNew.final, cRecup, 20000);
+            document.getElementById('recupMonths').innerText = monthsToRecover;
+        }
+
+        document.querySelectorAll('input[type=range]').forEach(el => el.addEventListener('input', updateAll));
+        
+        initCharts();
+        updateAll();
+    </script>
+</body>
+</html>
