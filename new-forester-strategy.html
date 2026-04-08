@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The New Forester Strategy</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #f9fafb; }
+        .card { background: white; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); padding: 24px; margin-bottom: 24px; border: 1px solid #e5e7eb; }
+        .stat-val { font-size: 1.875rem; font-weight: 800; color: #111827; }
+        .stat-label { font-size: 0.75rem; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; }
+        .highlight-blue { color: #2563eb; }
+    </style>
+</head>
+<body class="p-4 md:p-10">
+
+    <div class="max-w-4xl mx-auto">
+        <header class="mb-10 text-center">
+            <h1 class="text-3xl font-extrabold text-gray-900 italic tracking-tight">The "New Forester" Capital Strategy</h1>
+            <p class="text-gray-500 mt-2">Maximizing the 0.9% APR Arbitrage for Gabriel & Caitlynn</p>
+        </header>
+
+        <div class="card bg-blue-600 text-white border-none shadow-blue-200">
+            <h2 class="text-xl font-bold mb-4">Why New Beats Used (The Interest Spread)</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="bg-blue-500 bg-opacity-30 p-4 rounded-lg">
+                    <span class="block text-xs uppercase opacity-80 font-bold">HYSA Earnings</span>
+                    <span class="text-2xl font-black">3.25%</span>
+                </div>
+                <div class="flex items-center justify-center text-3xl font-bold hidden md:flex">-</div>
+                <div class="bg-blue-500 bg-opacity-30 p-4 rounded-lg">
+                    <span class="block text-xs uppercase opacity-80 font-bold">Loan Cost</span>
+                    <span class="text-2xl font-black">0.90%</span>
+                </div>
+                <div class="md:col-span-3 border-t border-blue-400 pt-4 mt-2">
+                    <p class="text-sm italic">"By taking the 0.9% loan and keeping our $20,000 in the Amex HYSA, the bank is effectively paying us <strong>2.35%</strong> to drive a brand new car instead of a used one."</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2 class="text-xl font-bold text-gray-800 mb-6">1. Choose Your Trim & Target Price</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 mb-2">Target Out-The-Door Price</label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-500">$</span>
+                        <input type="number" id="otdPrice" value="35500" class="block w-full pl-8 pr-12 py-3 border-gray-300 rounded-md border focus:ring-blue-500 focus:border-blue-500 font-bold text-lg">
+                    </div>
+                    <p class="text-xs text-gray-400 mt-2 italic">*Premium target: ~$35,200 | Onyx target: ~$37,500</p>
+                </div>
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 mb-2">Monthly Checking Contribution</label>
+                    <input type="range" id="contrib" min="450" max="650" step="10" value="530" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer mt-4">
+                    <div class="flex justify-between text-sm font-bold mt-2 text-blue-600">
+                        <span>$450</span>
+                        <span id="contribVal" class="text-lg">$530</span>
+                        <span>$650</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 pt-6 border-t">
+                <div><div class="stat-label">Monthly Payment</div><div id="pmt" class="stat-val highlight-blue"></div></div>
+                <div><div class="stat-label">Min HYSA Bal</div><div id="minBal" class="stat-val"></div></div>
+                <div><div class="stat-label">Final Cash</div><div id="finalCash" class="stat-val"></div></div>
+                <div><div class="stat-label">Liquid Cover</div><div id="cover" class="stat-val"></div></div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2 class="text-xl font-bold text-gray-800 mb-4">Cash Flow Survival (63 Months)</h2>
+            <canvas id="mainChart" height="120"></canvas>
+            <div class="mt-6 p-4 bg-gray-50 rounded-lg text-sm text-gray-600 leading-relaxed">
+                <strong>Safety Check:</strong> As long as the line stays above zero, our $20,000 capital remains untouched. After Month 36, the "Debt" is gone and our monthly contribution builds our wealth rapidly for future trips or Harlow's needs.
+            </div>
+        </div>
+
+        <div class="card border-l-8 border-l-blue-600">
+            <h2 class="text-xl font-bold text-gray-800 mb-4">True Monthly Operating Cost</h2>
+            <div class="space-y-3">
+                <div class="flex justify-between py-2 border-b border-gray-100">
+                    <span class="text-gray-600 italic">Loan Payment (Out of HYSA)</span>
+                    <span id="listPmt" class="font-bold text-blue-600"></span>
+                </div>
+                <div class="flex justify-between py-2 border-b border-gray-100">
+                    <span class="text-gray-600 italic">Fuel & Maintenance (Out of Checking)</span>
+                    <span class="font-bold text-gray-800">$185.00</span>
+                </div>
+                <div class="flex justify-between py-2 border-b border-gray-100">
+                    <span class="text-gray-600 italic">Insurance & Reg (Out of Checking)</span>
+                    <span class="font-bold text-gray-800">$216.00</span>
+                </div>
+                <div class="flex justify-between py-3">
+                    <span class="text-lg font-black text-gray-900 uppercase">Total Household Spend</span>
+                    <span id="totalSpend" class="text-xl font-black text-gray-900"></span>
+                </div>
+            </div>
+        </div>
+
+        <footer class="text-center text-gray-400 text-xs pb-10">
+            &copy; 2026 Household Strategic Planning | Bellflower, CA
+        </footer>
+    </div>
+
+    <script>
+        const format = (v) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(v);
+        let chart;
+
+        function update() {
+            const price = Number(document.getElementById('otdPrice').value);
+            const contrib = Number(document.getElementById('contrib').value);
+            document.getElementById('contribVal').innerText = format(contrib);
+
+            // Loan Math
+            const rate = 0.009 / 12;
+            const pmt = price * (rate * Math.pow(1 + rate, 36)) / (Math.pow(1 + rate, 36) - 1);
+            
+            // Simulation
+            let bal = 20000;
+            let min = 20000;
+            let history = [20000];
+            const hysaRate = 0.0325 / 12;
+
+            for (let i = 1; i <= 63; i++) {
+                let interest = bal > 0 ? bal * hysaRate : 0;
+                let draw = i <= 36 ? pmt : 0;
+                bal = bal + interest + contrib - draw;
+                if (bal < min) min = bal;
+                history.push(bal);
+            }
+
+            // Update UI
+            document.getElementById('pmt').innerText = format(pmt);
+            document.getElementById('listPmt').innerText = format(pmt);
+            document.getElementById('minBal').innerText = format(min);
+            document.getElementById('minBal').className = `stat-val ${min < 0 ? 'text-red-600' : 'text-green-600'}`;
+            document.getElementById('finalCash').innerText = format(bal);
+            document.getElementById('cover').innerText = (min / pmt).toFixed(1) + "x";
+            document.getElementById('totalSpend').innerText = format(pmt + 185 + 216);
+
+            chart.data.datasets[0].data = history;
+            chart.update();
+        }
+
+        const ctx = document.getElementById('mainChart').getContext('2d');
+        chart = new Chart(ctx, {
+            type: 'line',
+            data: { labels: Array.from({length: 64}, (_, i) => i), datasets: [{ label: 'HYSA Balance', data: [], borderColor: '#2563eb', backgroundColor: 'rgba(37, 99, 235, 0.1)', fill: true, tension: 0.2 }] },
+            options: { responsive: true, scales: { y: { grid: { color: (c) => c.tick.value === 0 ? '#000' : '#f0f0f0' } } } }
+        });
+
+        document.getElementById('otdPrice').addEventListener('input', update);
+        document.getElementById('contrib').addEventListener('input', update);
+        update();
+    </script>
+</body>
+</html>
