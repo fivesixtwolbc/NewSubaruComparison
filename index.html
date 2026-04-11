@@ -1,97 +1,363 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-<title>HYSA Payment Hub Dashboard</title>
-<style>
-  body { font-family: Arial, sans-serif; background-color: #f4f4f9; padding: 20px; }
-  .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 20px; }
-  .grid { display: grid; grid-template-columns: repeat(1, 1fr); gap: 20px; }
-  @media (min-width: 768px) { .grid { grid-template-columns: repeat(3, 1fr); } }
-  label { font-weight: bold; display: block; margin-top: 10px; }
-  input { width: 100%; padding: 8px; margin-top: 5px; box-sizing: border-box; }
-  button { background: #0056b3; color: white; border: none; padding: 10px 15px; border-radius: 4px; cursor: pointer; margin-top: 15px; }
-  button:hover { background: #004494; }
-  .result { margin-top: 15px; padding: 15px; border-left: 4px solid #0056b3; background: #e9ecef; }
-</style>
-<script>
-  function calculate() {
-    const startCapital = 20000;
-    const apy = 0.0325;
-    const monthlyRate = apy / 12;
-    const checkingContrib = parseFloat(document.getElementById('checking').value) || 560;
-
-    const scenarios = [
-      { id: 'forester', name: '2026 Forester Sport (Loaded)', apr: 0.009, months: 36, defaultOtd: 39000 },
-      { id: 'tucson-sel', name: '2026 Tucson SEL Premium', apr: 0.000, months: 60, defaultOtd: 38500 },
-      { id: 'tucson-ltd', name: '2026 Tucson Limited', apr: 0.000, months: 60, defaultOtd: 37000 }
-    ];
-
-    scenarios.forEach(sc => {
-      const otd = parseFloat(document.getElementById(sc.id + '-otd').value) || sc.defaultOtd;
-      const r = sc.apr / 12;
-      let monthlyPayment = 0;
-      
-      if (r === 0) {
-        monthlyPayment = otd / sc.months;
-      } else {
-        monthlyPayment = otd * r * Math.pow(1 + r, sc.months) / (Math.pow(1 + r, sc.months) - 1);
-      }
-
-      let balance = startCapital;
-      for (let i = 0; i < sc.months; i++) {
-        balance += (balance * monthlyRate); // Compound interest
-        balance += checkingContrib;         // Add monthly checking transfer
-        balance -= monthlyPayment;          // Pay auto loan
-      }
-
-      document.getElementById(sc.id + '-payment').innerText = '$' + monthlyPayment.toFixed(2);
-      document.getElementById(sc.id + '-balance').innerText = '$' + balance.toFixed(2);
-    });
-  }
-  window.onload = calculate;
-</script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cross-Brand Strategy Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #f3f4f6; }
+        .card { background: white; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); padding: 24px; margin-bottom: 24px; border: 1px solid #e5e7eb; }
+        .metric { font-size: 1.5rem; font-weight: 900; color: #1f2937; }
+        .metric-label { font-size: 0.75rem; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 700; }
+        .danger { color: #dc2626; }
+        .success { color: #16a34a; }
+        @media print {
+            body { background-color: white; padding: 0; }
+            .card { box-shadow: none; border: 1px solid #e5e7eb; page-break-inside: avoid; }
+            input[type="range"], select, button { display: none; }
+            .no-print { display: none; }
+        }
+    </style>
 </head>
-<body>
-  <h2>Vehicle Strategy & HYSA Stress Test</h2>
-  <div class="card">
-    <label>Monthly Checking Contribution ($)</label>
-    <input type="number" id="checking" value="560" step="10" oninput="calculate()">
-    <small>Adjust this to see how much padding you need to hit your target Month 36/60 Amex balance.</small>
-  </div>
-  
-  <div class="grid">
-    <div class="card">
-      <h3>2026 Forester Sport (Loaded)</h3>
-      <p>36 Months @ 0.9% APR</p>
-      <label>Target OTD ($37,000 - $40,000)</label>
-      <input type="number" id="forester-otd" value="39000" step="500" oninput="calculate()">
-      <div class="result">
-        <strong>Monthly Payment:</strong> <span id="forester-payment"></span><br><br>
-        <strong>HYSA Balance at Month 36:</strong> <span id="forester-balance"></span>
-      </div>
+<body class="p-4 md:p-8">
+
+    <div class="max-w-6xl mx-auto relative">
+        
+        <div class="absolute top-0 right-0 no-print">
+            <button onclick="window.print()" class="bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 font-bold py-2 px-4 rounded shadow-sm transition">
+                🖨️ Print / Save PDF
+            </button>
+        </div>
+
+        <header class="mb-8 text-center md:text-left">
+            <h1 class="text-3xl font-bold text-gray-900">The Loan Lifecycle Strategy</h1>
+            <p class="text-gray-600 mt-2">Subaru vs. Hyundai: Capital Preservation & Post-Loan Recuperation</p>
+        </header>
+
+        <div class="card bg-blue-900 text-white border-none shadow-blue-200">
+            <h2 class="text-xl font-bold mb-4 text-blue-100">The Core Financial Framework</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="bg-blue-800 p-4 rounded-lg border border-blue-700 text-center">
+                    <span class="block text-xs uppercase text-blue-300 font-bold tracking-wider mb-1">Amex HYSA Yield</span>
+                    <span class="text-3xl font-black text-white">3.25%</span>
+                </div>
+                <div class="bg-blue-800 p-4 rounded-lg border border-blue-700 text-center">
+                    <span class="block text-xs uppercase text-blue-300 font-bold tracking-wider mb-1">Subaru Rate</span>
+                    <span class="text-3xl font-black text-white">0.90% <span class="text-sm font-normal text-blue-300">/ 36 Mo</span></span>
+                </div>
+                <div class="bg-blue-800 p-4 rounded-lg border border-blue-700 text-center">
+                    <span class="block text-xs uppercase text-blue-300 font-bold tracking-wider mb-1">Hyundai Rate</span>
+                    <span class="text-3xl font-black text-white">0.00% <span class="text-sm font-normal text-blue-300">/ 60 Mo</span></span>
+                </div>
+                <div class="md:col-span-3 border-t border-blue-800 pt-4 mt-2">
+                    <p class="text-sm text-blue-200 leading-relaxed"><strong>The Mission:</strong> Map the active drain of the monthly car payments against the 3.25% growth of the $20,000 HYSA over the exact life of each loan, then calculate the speed of rebuilding the capital back to $20,000 once the loan is eliminated.</p>
+                </div>
+            </div>
+        </div>
+
+        <h2 class="text-2xl font-bold text-gray-800 mb-4 px-2">The Three Contenders: Active Loan Phase</h2>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            
+            <div class="card mb-0 bg-gray-50 border-t-4 border-t-blue-500">
+                <div class="flex justify-between items-start mb-2">
+                    <h3 class="text-lg font-bold text-gray-900">1. '26 Forester Sport</h3>
+                    <span class="bg-blue-100 text-blue-800 text-xs font-bold px-2 py-1 rounded">36 Mo @ 0.9%</span>
+                </div>
+                <p class="text-xs text-gray-500 mb-4 h-8">Fully Loaded with Pkg 24. StarTex + Power Liftgate.</p>
+                
+                <div class="space-y-4 border-b border-gray-200 pb-4 mb-4">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 flex justify-between">Target OTD Price: <span id="valOtd1" class="text-blue-600"></span></label>
+                        <input type="range" id="otd1" min="37000" max="40000" step="100" value="39000" class="w-full mt-1 cursor-pointer">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 flex justify-between">Checking Contribution: <span id="valContrib1" class="text-blue-600"></span></label>
+                        <input type="range" id="contrib1" min="400" max="800" step="10" value="560" class="w-full mt-1 cursor-pointer">
+                    </div>
+                </div>
+
+                <div class="space-y-3">
+                    <div class="flex justify-between items-end">
+                        <span class="metric-label">Monthly Pmt:</span>
+                        <span class="text-xl font-bold text-gray-800" id="pmt1"></span>
+                    </div>
+                    <div class="flex justify-between items-end">
+                        <span class="metric-label">Min HYSA Bal:</span>
+                        <span class="text-xl font-bold" id="minBal1"></span>
+                    </div>
+                    <div class="flex justify-between items-end bg-blue-100 p-2 rounded">
+                        <span class="metric-label text-blue-900">Mo. 36 Final Cash:</span>
+                        <span class="text-2xl font-black text-blue-700" id="cash1"></span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mb-0 bg-gray-50 border-t-4 border-t-teal-500">
+                <div class="flex justify-between items-start mb-2">
+                    <h3 class="text-lg font-bold text-gray-900">2. '26 Tucson SEL Prem</h3>
+                    <span class="bg-teal-100 text-teal-800 text-xs font-bold px-2 py-1 rounded">60 Mo @ 0.0%</span>
+                </div>
+                <p class="text-xs text-gray-500 mb-4 h-8">H-Tex Seats + Smart Liftgate. The strategic target.</p>
+                
+                <div class="space-y-4 border-b border-gray-200 pb-4 mb-4">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 flex justify-between">Target OTD Price: <span id="valOtd2" class="text-teal-600"></span></label>
+                        <input type="range" id="otd2" min="35000" max="38500" step="100" value="38000" class="w-full mt-1 cursor-pointer">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 flex justify-between">Checking Contribution: <span id="valContrib2" class="text-teal-600"></span></label>
+                        <input type="range" id="contrib2" min="400" max="800" step="10" value="560" class="w-full mt-1 cursor-pointer">
+                    </div>
+                </div>
+
+                <div class="space-y-3">
+                    <div class="flex justify-between items-end">
+                        <span class="metric-label">Monthly Pmt:</span>
+                        <span class="text-xl font-bold text-gray-800" id="pmt2"></span>
+                    </div>
+                    <div class="flex justify-between items-end">
+                        <span class="metric-label">Min HYSA Bal:</span>
+                        <span class="text-xl font-bold" id="minBal2"></span>
+                    </div>
+                    <div class="flex justify-between items-end bg-teal-100 p-2 rounded">
+                        <span class="metric-label text-teal-900">Mo. 60 Final Cash:</span>
+                        <span class="text-2xl font-black text-teal-700" id="cash2"></span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mb-0 bg-gray-50 border-t-4 border-t-purple-500">
+                <div class="flex justify-between items-start mb-2">
+                    <h3 class="text-lg font-bold text-gray-900">3. '25 Tucson Limited</h3>
+                    <span class="bg-purple-100 text-purple-800 text-xs font-bold px-2 py-1 rounded">60 Mo @ 0.0%</span>
+                </div>
+                <p class="text-xs text-gray-500 mb-4 h-8">Leftover Model. Highest trim, aggressive discounts.</p>
+                
+                <div class="space-y-4 border-b border-gray-200 pb-4 mb-4">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 flex justify-between">Target OTD Price: <span id="valOtd3" class="text-purple-600"></span></label>
+                        <input type="range" id="otd3" min="35000" max="37500" step="100" value="36500" class="w-full mt-1 cursor-pointer">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 flex justify-between">Checking Contribution: <span id="valContrib3" class="text-purple-600"></span></label>
+                        <input type="range" id="contrib3" min="400" max="800" step="10" value="560" class="w-full mt-1 cursor-pointer">
+                    </div>
+                </div>
+
+                <div class="space-y-3">
+                    <div class="flex justify-between items-end">
+                        <span class="metric-label">Monthly Pmt:</span>
+                        <span class="text-xl font-bold text-gray-800" id="pmt3"></span>
+                    </div>
+                    <div class="flex justify-between items-end">
+                        <span class="metric-label">Min HYSA Bal:</span>
+                        <span class="text-xl font-bold" id="minBal3"></span>
+                    </div>
+                    <div class="flex justify-between items-end bg-purple-100 p-2 rounded">
+                        <span class="metric-label text-purple-900">Mo. 60 Final Cash:</span>
+                        <span class="text-2xl font-black text-purple-700" id="cash3"></span>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="card">
+            <h2 class="text-xl font-bold text-gray-800 mb-4">Active Loan Trajectory (0 - 60 Months)</h2>
+            <p class="text-sm text-gray-500 mb-6">This chart maps the HYSA balance during the life of the loans. Notice the Subaru line terminates at Month 36 when the loan ends, while the Hyundai loans stretch to Month 60.</p>
+            <div class="h-64">
+                <canvas id="masterChart"></canvas>
+            </div>
+        </div>
+
+        <div class="card bg-gray-900 text-white">
+            <h2 class="text-2xl font-bold mb-2">Phase 2: Post-Loan Capital Rebuild</h2>
+            <p class="text-gray-400 text-sm mb-6">Once the loan ends (Mo. 36 for Subaru, Mo. 60 for Hyundai), you redirect the freed-up cash flow to rebuild the Amex HYSA back to the original $20,000 threshold.</p>
+            
+            <div class="bg-gray-800 p-6 rounded-lg border border-gray-700">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 items-center">
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-2">1. Select the Vehicle Bought:</label>
+                        <select id="recupSelect" class="w-full bg-gray-700 border border-gray-600 text-white rounded p-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer">
+                            <option value="1">1. '26 Forester Sport (Ends Mo. 36)</option>
+                            <option value="2" selected>2. '26 Tucson SEL Prem (Ends Mo. 60)</option>
+                            <option value="3">3. '25 Tucson Limited (Ends Mo. 60)</option>
+                        </select>
+                        <p class="text-xs text-gray-500 mt-2">Starting balance: <span id="recupStartBal" class="font-bold text-white"></span></p>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-2">2. Rebuild Monthly Contribution:<br><span class="text-xs text-gray-500 font-normal">(Redirecting cash back to savings)</span></label>
+                        <input type="range" id="recupContrib" min="400" max="1500" step="50" value="800" class="w-full cursor-pointer">
+                        <div class="text-right text-xl font-bold text-blue-400 mt-1" id="recupContribVal">$800</div>
+                    </div>
+                    
+                    <div class="text-center md:text-right border-t md:border-t-0 md:border-l border-gray-700 pt-4 md:pt-0 pl-0 md:pl-8">
+                        <span class="block text-sm uppercase tracking-wide text-gray-400 font-semibold mb-1">Time to Rebuild to $20,000</span>
+                        <span class="text-5xl font-black text-white" id="recupMonths"></span>
+                        <span class="block text-sm text-gray-400 mt-2">Months after loan ends</span>
+                    </div>
+                </div>
+            </div>
+            <div class="mt-4 text-xs text-gray-500 text-center">
+                *Calculated from the exact ending balance of the selected loan, factoring in 3.25% APY compounding interest.
+            </div>
+        </div>
+
     </div>
 
-    <div class="card">
-      <h3>2026 Tucson SEL Premium</h3>
-      <p>60 Months @ 0.0% APR</p>
-      <label>Target OTD ($35,000 - $38,500)</label>
-      <input type="number" id="tucson-sel-otd" value="38500" step="500" oninput="calculate()">
-      <div class="result">
-        <strong>Monthly Payment:</strong> <span id="tucson-sel-payment"></span><br><br>
-        <strong>HYSA Balance at Month 60:</strong> <span id="tucson-sel-balance"></span>
-      </div>
-    </div>
+    <script>
+        const format = (v) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(v);
+        
+        let masterChart;
+        const hysaApy = 0.0325;
+        let simResults = { 1: 0, 2: 0, 3: 0 }; 
 
-    <div class="card">
-      <h3>2026 Tucson Limited</h3>
-      <p>60 Months @ 0.0% APR</p>
-      <label>Target OTD ($35,000 - $37,500)</label>
-      <input type="number" id="tucson-ltd-otd" value="37000" step="500" oninput="calculate()">
-      <div class="result">
-        <strong>Monthly Payment:</strong> <span id="tucson-ltd-payment"></span><br><br>
-        <strong>HYSA Balance at Month 60:</strong> <span id="tucson-ltd-balance"></span>
-      </div>
-    </div>
-  </div>
+        function calcLoanPmt(principal, rate, months) {
+            if (principal <= 0) return 0;
+            const mRate = (rate / 100) / 12;
+            if (mRate === 0) return principal / months;
+            return principal * (mRate * Math.pow(1 + mRate, months)) / (Math.pow(1 + mRate, months) - 1);
+        }
+
+        function simulateLoan(startCash, contrib, pmt, loanMonths) {
+            let bal = startCash;
+            let min = startCash;
+            let history = [startCash];
+            const mRate = hysaApy / 12;
+
+            for (let i = 1; i <= 60; i++) {
+                if (i <= loanMonths) {
+                    let interest = bal > 0 ? bal * mRate : 0;
+                    bal = bal + interest + contrib - pmt;
+                    if (bal < min) min = bal;
+                    history.push(bal);
+                } else {
+                    history.push(null); // Stop the line drawing after the loan ends
+                }
+            }
+            return { final: bal, min: min, history: history };
+        }
+
+        function calcRecuperation(startBal, monthlyContrib, target) {
+            if (startBal >= target) return 0;
+            let bal = startBal;
+            let months = 0;
+            const mRate = hysaApy / 12;
+            
+            if(monthlyContrib <= 0 && bal < target) return ">100";
+
+            while (bal < target && months < 120) {
+                let interest = bal > 0 ? bal * mRate : 0;
+                bal = bal + interest + monthlyContrib;
+                months++;
+            }
+            return months;
+        }
+
+        function initCharts() {
+            const ctx = document.getElementById('masterChart').getContext('2d');
+            masterChart = new Chart(ctx, { 
+                type: 'line', 
+                data: { 
+                    labels: Array.from({length: 61}, (_, i) => i), 
+                    datasets: [
+                        { label: '1. 36-Mo Subaru', borderColor: '#3b82f6', backgroundColor: '#3b82f6', tension: 0.1, fill: false, spanGaps: false },
+                        { label: '2. 60-Mo Tucson SEL', borderColor: '#14b8a6', backgroundColor: '#14b8a6', tension: 0.1, fill: false, spanGaps: false },
+                        { label: '3. 60-Mo Tucson Ltd', borderColor: '#a855f7', backgroundColor: '#a855f7', tension: 0.1, fill: false, spanGaps: false }
+                    ] 
+                }, 
+                options: { 
+                    responsive: true, 
+                    maintainAspectRatio: false, 
+                    interaction: { mode: 'index', intersect: false },
+                    scales: { 
+                        y: { 
+                            grid: { color: c => c.tick.value === 0 ? '#ef4444' : '#e5e7eb', lineWidth: c => c.tick.value === 0 ? 2 : 1 } 
+                        } 
+                    } 
+                } 
+            });
+        }
+
+        function updateAll() {
+            // Inputs
+            const otd1 = Number(document.getElementById('otd1').value);
+            const otd2 = Number(document.getElementById('otd2').value);
+            const otd3 = Number(document.getElementById('otd3').value);
+            
+            const c1 = Number(document.getElementById('contrib1').value);
+            const c2 = Number(document.getElementById('contrib2').value);
+            const c3 = Number(document.getElementById('contrib3').value);
+
+            // Update Labels
+            document.getElementById('valOtd1').innerText = format(otd1);
+            document.getElementById('valOtd2').innerText = format(otd2);
+            document.getElementById('valOtd3').innerText = format(otd3);
+            document.getElementById('valContrib1').innerText = format(c1);
+            document.getElementById('valContrib2').innerText = format(c2);
+            document.getElementById('valContrib3').innerText = format(c3);
+
+            // Payments
+            const pmt1 = calcLoanPmt(otd1, 0.9, 36);
+            const pmt2 = calcLoanPmt(otd2, 0.0, 60);
+            const pmt3 = calcLoanPmt(otd3, 0.0, 60);
+
+            document.getElementById('pmt1').innerText = format(pmt1);
+            document.getElementById('pmt2').innerText = format(pmt2);
+            document.getElementById('pmt3').innerText = format(pmt3);
+
+            // Simulate Loans
+            const sim1 = simulateLoan(20000, c1, pmt1, 36);
+            const sim2 = simulateLoan(20000, c2, pmt2, 60);
+            const sim3 = simulateLoan(20000, c3, pmt3, 60);
+
+            simResults[1] = sim1.final;
+            simResults[2] = sim2.final;
+            simResults[3] = sim3.final;
+
+            // Update UI
+            document.getElementById('minBal1').innerText = format(sim1.min);
+            document.getElementById('minBal1').className = `text-xl font-bold ${sim1.min < 0 ? 'danger' : 'success'}`;
+            document.getElementById('cash1').innerText = format(sim1.final);
+
+            document.getElementById('minBal2').innerText = format(sim2.min);
+            document.getElementById('minBal2').className = `text-xl font-bold ${sim2.min < 0 ? 'danger' : 'success'}`;
+            document.getElementById('cash2').innerText = format(sim2.final);
+
+            document.getElementById('minBal3').innerText = format(sim3.min);
+            document.getElementById('minBal3').className = `text-xl font-bold ${sim3.min < 0 ? 'danger' : 'success'}`;
+            document.getElementById('cash3').innerText = format(sim3.final);
+
+            // Update Chart
+            masterChart.data.datasets[0].data = sim1.history;
+            masterChart.data.datasets[1].data = sim2.history;
+            masterChart.data.datasets[2].data = sim3.history;
+            masterChart.update();
+
+            updateRecuperation();
+        }
+
+        function updateRecuperation() {
+            const selectedTrim = document.getElementById('recupSelect').value;
+            const startingBal = simResults[selectedTrim];
+            const recupContrib = Number(document.getElementById('recupContrib').value);
+            
+            document.getElementById('recupContribVal').innerText = format(recupContrib);
+            document.getElementById('recupStartBal').innerText = format(startingBal);
+
+            const monthsToRecover = calcRecuperation(startingBal, recupContrib, 20000);
+            document.getElementById('recupMonths').innerText = monthsToRecover;
+        }
+
+        document.querySelectorAll('input[type=range]').forEach(el => el.addEventListener('input', updateAll));
+        document.getElementById('recupSelect').addEventListener('change', updateRecuperation);
+        
+        initCharts();
+        updateAll();
+    </script>
 </body>
 </html>
