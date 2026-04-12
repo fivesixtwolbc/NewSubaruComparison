@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Forester HYSA Arbitrage Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root {
             --primary: #0f172a;
@@ -29,7 +30,7 @@
         }
         .header {
             text-align: center;
-            margin-bottom: 3rem;
+            margin-bottom: 2rem;
         }
         .header h1 {
             color: var(--primary);
@@ -39,20 +40,50 @@
             color: var(--text-muted);
             font-size: 1.1rem;
         }
+        
+        /* Slider & Controls Panel */
+        .controls-panel {
+            background: var(--card-bg);
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            margin-bottom: 2rem;
+            border-left: 4px solid var(--secondary);
+            display: flex;
+            align-items: center;
+            gap: 2rem;
+        }
+        .slider-container {
+            flex-grow: 1;
+        }
+        .slider-label {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            display: flex;
+            justify-content: space-between;
+        }
+        input[type="range"] {
+            width: 100%;
+            cursor: pointer;
+        }
+
+        /* Dashboard Grid */
         .dashboard-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
             gap: 1.5rem;
+            margin-bottom: 3rem;
         }
         .card {
             background-color: var(--card-bg);
             border-radius: 12px;
             padding: 1.5rem;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-            border-top: 4px solid var(--secondary);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            border-top: 4px solid var(--primary);
         }
         .card-title {
-            font-size: 1.25rem;
+            font-size: 1.15rem;
             font-weight: 700;
             color: var(--primary);
             margin-bottom: 0.25rem;
@@ -76,30 +107,61 @@
         .data-value {
             font-weight: 600;
         }
-        .highlight-green {
-            color: var(--success);
-        }
-        .highlight-red {
-            color: var(--danger);
-        }
+        .highlight-green { color: var(--success); }
+        .highlight-red { color: var(--danger); }
         .net-result {
             margin-top: 1.5rem;
             padding-top: 1rem;
             border-top: 2px dashed #e2e8f0;
-            font-size: 1.1rem;
+            font-size: 1.05rem;
         }
-        .hub-params {
-            background: var(--primary);
-            color: white;
-            padding: 1rem 2rem;
+
+        /* Chart Area */
+        .chart-container {
+            background: var(--card-bg);
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            margin-bottom: 3rem;
+        }
+
+        /* Replenishment Section */
+        .replenish-panel {
+            background: var(--card-bg);
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            border-left: 4px solid var(--success);
+        }
+        .replenish-panel h2 {
+            margin-top: 0;
+            color: var(--primary);
+        }
+        .form-group {
+            margin-bottom: 1rem;
+        }
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+        .form-group select, .form-group input {
+            padding: 0.5rem;
+            font-size: 1rem;
+            width: 100%;
+            max-width: 400px;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+        }
+        .result-box {
+            margin-top: 1.5rem;
+            padding: 1rem;
+            background: #f0fdf4;
+            border: 1px solid #bbf7d0;
             border-radius: 8px;
-            margin-bottom: 2rem;
-            display: flex;
-            justify-content: space-between;
-            flex-wrap: wrap;
-        }
-        .hub-params div {
-            margin: 0.5rem 0;
+            font-size: 1.1rem;
+            font-weight: 500;
+            color: #166534;
         }
     </style>
 </head>
@@ -108,140 +170,260 @@
 <div class="container">
     <div class="header">
         <h1>Forester Acquisition Strategy</h1>
-        <p>Comparative Financial Analysis: HYSA Payment Hub Arbitrage</p>
+        <p>Dynamic HYSA Payment Hub Arbitrage Analysis</p>
     </div>
 
-    <div class="hub-params">
-        <div><strong>Starting HYSA Balance:</strong> $20,000</div>
-        <div><strong>HYSA APY:</strong> 3.25%</div>
-        <div><strong>Monthly Checking Contribution:</strong> $560</div>
-        <div><strong>Down Payment:</strong> $0</div>
+    <div class="controls-panel">
+        <div class="slider-container">
+            <div class="slider-label">
+                <span>Monthly Checking Contribution to HYSA</span>
+                <span id="sliderValueDisplay" class="highlight-green">$560</span>
+            </div>
+            <input type="range" id="contribSlider" min="200" max="1200" step="10" value="560">
+        </div>
+        <div style="text-align: right; min-width: 200px;">
+            <div class="data-label">Starting HYSA: <strong>$20,000</strong></div>
+            <div class="data-label">HYSA APY: <strong>3.25%</strong></div>
+            <div class="data-label">Down Payment: <strong>$0</strong></div>
+        </div>
     </div>
 
     <div class="dashboard-grid" id="dashboard">
         </div>
+
+    <div class="chart-container">
+        <h2 style="margin-top: 0; color: var(--primary);">HYSA Balance Over 72 Months</h2>
+        <p style="color: var(--text-muted); font-size: 0.9rem;">Assuming you continue your monthly contribution even after a 36-month loan is paid off.</p>
+        <canvas id="hysaChart" height="100"></canvas>
+    </div>
+
+    <div class="replenish-panel">
+        <h2>Post-Loan Replenishment Calculator</h2>
+        <p style="color: var(--text-muted); margin-bottom: 1.5rem;">See how long it takes to build your HYSA back to a specific goal after the car is completely paid off.</p>
+        
+        <div class="form-group">
+            <label for="scenarioSelect">Select Car Scenario:</label>
+            <select id="scenarioSelect"></select>
+        </div>
+        
+        <div class="form-group">
+            <label for="targetGoal">Target HYSA Goal ($):</label>
+            <input type="number" id="targetGoal" value="25000" step="1000">
+        </div>
+
+        <div class="result-box" id="replenishResult">
+            </div>
+    </div>
 </div>
 
 <script>
+    // --- Constants & Data ---
     const hysaStartingBalance = 20000;
     const hysaApy = 0.0325;
-    const monthlyContribution = 560;
-
+    
     const scenarios = [
-        {
-            title: "Option 1: White Onyx (Timmons)",
-            subtitle: "$39,000 OTD | 1.9% APR | 72 Months",
-            otd: 39000,
-            apr: 0.019,
-            months: 72
-        },
-        {
-            title: "Option 2: White Sport (Monrovia)",
-            subtitle: "$38,500 OTD | 0.9% APR | 36 Months",
-            otd: 38500,
-            apr: 0.009,
-            months: 36
-        },
-        {
-            title: "Option 3: White Sport (Monrovia)",
-            subtitle: "$38,500 OTD | 1.9% APR | 72 Months",
-            otd: 38500,
-            apr: 0.019,
-            months: 72
-        },
-        {
-            title: "Option 4: White Sport Hybrid (Timmons)",
-            subtitle: "$40,000 OTD | 0.9% APR | 36 Months",
-            otd: 40000,
-            apr: 0.009,
-            months: 36
-        },
-        {
-            title: "Option 5: White Sport Hybrid (Timmons)",
-            subtitle: "$40,000 OTD | 1.9% APR | 72 Months",
-            otd: 40000,
-            apr: 0.019,
-            months: 72
-        }
+        { id: 0, title: "1. White Onyx (Timmons)", subtitle: "$39,000 OTD | 1.9% | 72 Mos", otd: 39000, apr: 0.019, months: 72, color: '#3b82f6' },
+        { id: 1, title: "2. White Sport (Monrovia)", subtitle: "$38,500 OTD | 0.9% | 36 Mos", otd: 38500, apr: 0.009, months: 36, color: '#10b981' },
+        { id: 2, title: "3. White Sport (Monrovia)", subtitle: "$38,500 OTD | 1.9% | 72 Mos", otd: 38500, apr: 0.019, months: 72, color: '#8b5cf6' },
+        { id: 3, title: "4. White Hybrid (Timmons)", subtitle: "$40,000 OTD | 0.9% | 36 Mos", otd: 40000, apr: 0.009, months: 36, color: '#f59e0b' },
+        { id: 4, title: "5. White Hybrid (Timmons)", subtitle: "$40,000 OTD | 1.9% | 72 Mos", otd: 40000, apr: 0.019, months: 72, color: '#ef4444' }
     ];
 
-    function calculateScenario(scenario) {
-        // Auto Loan Math
+    // --- DOM Elements ---
+    const slider = document.getElementById('contribSlider');
+    const sliderDisplay = document.getElementById('sliderValueDisplay');
+    const dashboard = document.getElementById('dashboard');
+    const scenarioSelect = document.getElementById('scenarioSelect');
+    const targetGoalInput = document.getElementById('targetGoal');
+    const replenishResult = document.getElementById('replenishResult');
+    let hysaChart;
+
+    // --- Formatters ---
+    const formatCurrency = (num) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(num);
+
+    // --- Core Calculation Logic ---
+    function calculateScenario(scenario, monthlyContribution) {
         const monthlyRate = scenario.apr / 12;
         const autoPayment = (scenario.otd * monthlyRate) / (1 - Math.pow(1 + monthlyRate, -scenario.months));
         const totalAutoInterest = (autoPayment * scenario.months) - scenario.otd;
 
-        // HYSA Simulation over the life of the loan
         let currentBalance = hysaStartingBalance;
         let totalHysaInterest = 0;
+        let chartData = [hysaStartingBalance];
 
-        for (let i = 0; i < scenario.months; i++) {
+        // Simulate 72 months to make charts equal
+        for (let i = 1; i <= 72; i++) {
             let monthlyInterest = currentBalance * (hysaApy / 12);
             totalHysaInterest += monthlyInterest;
             currentBalance += monthlyInterest;
-            currentBalance -= autoPayment;
+            
+            // Only deduct car payment if the loan is still active
+            let activePayment = (i <= scenario.months) ? autoPayment : 0;
+            currentBalance -= activePayment;
             currentBalance += monthlyContribution;
+            
+            chartData.push(currentBalance);
         }
 
-        const netFinancialWin = totalHysaInterest - totalAutoInterest;
-        const monthlyDrainGain = monthlyContribution - autoPayment;
+        // To calculate "Net Win" fairly, we only look at the interest earned DURING the actual loan term
+        let balanceAtEndOfLoan = chartData[scenario.months];
+        let hysaInterestDuringLoan = 0;
+        let tempBal = hysaStartingBalance;
+        for (let i = 1; i <= scenario.months; i++) {
+            hysaInterestDuringLoan += tempBal * (hysaApy / 12);
+            tempBal += tempBal * (hysaApy / 12) - autoPayment + monthlyContribution;
+        }
 
         return {
             ...scenario,
-            autoPayment: autoPayment,
-            totalAutoInterest: totalAutoInterest,
-            totalHysaInterest: totalHysaInterest,
-            netFinancialWin: netFinancialWin,
-            monthlyDrainGain: monthlyDrainGain
+            autoPayment,
+            totalAutoInterest,
+            hysaInterestDuringLoan,
+            balanceAtEndOfLoan,
+            netFinancialWin: hysaInterestDuringLoan - totalAutoInterest,
+            monthlyDrainGain: monthlyContribution - autoPayment,
+            chartData
         };
     }
 
-    function formatCurrency(num) {
-        return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(num);
+    // --- UI Updaters ---
+    function updateDashboard() {
+        const contribution = parseFloat(slider.value);
+        sliderDisplay.innerText = formatCurrency(contribution);
+        
+        dashboard.innerHTML = '';
+        let chartDatasets = [];
+
+        scenarios.forEach(scenario => {
+            const res = calculateScenario(scenario, contribution);
+            
+            // Build Card
+            const winClass = res.netFinancialWin >= 0 ? 'highlight-green' : 'highlight-red';
+            const drainClass = res.monthlyDrainGain >= 0 ? 'highlight-green' : 'highlight-red';
+            const drainText = res.monthlyDrainGain >= 0 ? `+${formatCurrency(res.monthlyDrainGain)}` : `${formatCurrency(res.monthlyDrainGain)}`;
+
+            dashboard.innerHTML += `
+                <div class="card" style="border-top-color: ${scenario.color}">
+                    <div class="card-title">${res.title}</div>
+                    <div class="card-subtitle">${res.subtitle}</div>
+                    
+                    <div class="data-row">
+                        <span class="data-label">Monthly Car Payment:</span>
+                        <span class="data-value">${formatCurrency(res.autoPayment)}</span>
+                    </div>
+                    <div class="data-row">
+                        <span class="data-label">HYSA Net Monthly Cashflow:</span>
+                        <span class="data-value ${drainClass}">${drainText}</span>
+                    </div>
+                    <div class="data-row">
+                        <span class="data-label">End of Loan Balance (${res.months} mo):</span>
+                        <span class="data-value">${formatCurrency(res.balanceAtEndOfLoan)}</span>
+                    </div>
+                    
+                    <div class="data-row net-result">
+                        <span class="data-label">Arbitrage Win (During Loan):</span>
+                        <span class="data-value ${winClass}">${formatCurrency(res.netFinancialWin)}</span>
+                    </div>
+                </div>
+            `;
+
+            // Build Chart Data
+            chartDatasets.push({
+                label: res.title,
+                data: res.chartData,
+                borderColor: scenario.color,
+                backgroundColor: scenario.color + '20',
+                fill: false,
+                tension: 0.1
+            });
+        });
+
+        updateChart(chartDatasets);
+        updateReplenishment();
     }
 
-    const dashboard = document.getElementById('dashboard');
-
-    scenarios.forEach(scenario => {
-        const results = calculateScenario(scenario);
+    function updateChart(datasets) {
+        const labels = Array.from({length: 73}, (_, i) => `Mo ${i}`);
         
-        const winClass = results.netFinancialWin >= 0 ? 'highlight-green' : 'highlight-red';
-        const drainGainText = results.monthlyDrainGain >= 0 
-            ? `+${formatCurrency(results.monthlyDrainGain)} to HYSA/mo` 
-            : `${formatCurrency(results.monthlyDrainGain)} from HYSA/mo`;
-        const drainGainClass = results.monthlyDrainGain >= 0 ? 'highlight-green' : 'highlight-red';
+        if (hysaChart) {
+            hysaChart.data.labels = labels;
+            hysaChart.data.datasets = datasets;
+            hysaChart.update();
+        } else {
+            const ctx = document.getElementById('hysaChart').getContext('2d');
+            hysaChart = new Chart(ctx, {
+                type: 'line',
+                data: { labels, datasets },
+                options: {
+                    responsive: true,
+                    interaction: { mode: 'index', intersect: false },
+                    scales: {
+                        y: {
+                            ticks: { callback: function(value) { return '$' + value.toLocaleString(); } }
+                        }
+                    },
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.dataset.label + ': ' + formatCurrency(context.parsed.y);
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+    }
 
-        const cardHTML = `
-            <div class="card">
-                <div class="card-title">${results.title}</div>
-                <div class="card-subtitle">${results.subtitle}</div>
-                
-                <div class="data-row">
-                    <span class="data-label">Monthly Car Payment:</span>
-                    <span class="data-value">${formatCurrency(results.autoPayment)}</span>
-                </div>
-                <div class="data-row">
-                    <span class="data-label">Net HYSA Impact:</span>
-                    <span class="data-value ${drainGainClass}">${drainGainText}</span>
-                </div>
-                <div class="data-row">
-                    <span class="data-label">Total Loan Interest Paid:</span>
-                    <span class="data-value highlight-red">-${formatCurrency(results.totalAutoInterest)}</span>
-                </div>
-                <div class="data-row">
-                    <span class="data-label">Total HYSA Interest Earned:</span>
-                    <span class="data-value highlight-green">+${formatCurrency(results.totalHysaInterest)}</span>
-                </div>
-                
-                <div class="data-row net-result">
-                    <span class="data-label">Net Arbitrage Win (Life of Loan):</span>
-                    <span class="data-value ${winClass}">${formatCurrency(results.netFinancialWin)}</span>
-                </div>
-            </div>
+    function updateReplenishment() {
+        const contribution = parseFloat(slider.value);
+        const selectedId = parseInt(scenarioSelect.value);
+        const target = parseFloat(targetGoalInput.value);
+        
+        const scenario = scenarios.find(s => s.id === selectedId);
+        const res = calculateScenario(scenario, contribution);
+        
+        let currentBal = res.balanceAtEndOfLoan;
+        let months = 0;
+
+        if (currentBal >= target) {
+            replenishResult.innerHTML = `At the end of the ${scenario.months}-month loan, your HYSA balance will be <strong>${formatCurrency(currentBal)}</strong>, which already exceeds your target of ${formatCurrency(target)}!`;
+            return;
+        }
+
+        // Loop to calculate months to reach target
+        while (currentBal < target && months < 600) { // cap at 50 years to prevent infinite loops
+            currentBal += currentBal * (hysaApy / 12);
+            currentBal += contribution;
+            months++;
+        }
+
+        const years = Math.floor(months / 12);
+        const extraMonths = months % 12;
+        let timeString = years > 0 ? `${years} year(s) and ${extraMonths} month(s)` : `${months} month(s)`;
+
+        replenishResult.innerHTML = `
+            Starting with <strong>${formatCurrency(res.balanceAtEndOfLoan)}</strong> at the end of the ${scenario.months}-month loan...<br><br>
+            By continuing to contribute <strong>${formatCurrency(contribution)}/month</strong>, it will take exactly <strong>${timeString}</strong> to reach your goal of ${formatCurrency(target)}.
         `;
-        dashboard.innerHTML += cardHTML;
-    });
-</script>
+    }
 
+    // --- Initialization & Event Listeners ---
+    scenarios.forEach(s => {
+        let opt = document.createElement('option');
+        opt.value = s.id;
+        opt.innerHTML = s.title;
+        scenarioSelect.appendChild(opt);
+    });
+
+    slider.addEventListener('input', updateDashboard);
+    scenarioSelect.addEventListener('change', updateReplenishment);
+    targetGoalInput.addEventListener('input', updateReplenishment);
+
+    // Initial Render
+    updateDashboard();
+
+</script>
 </body>
 </html>
