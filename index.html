@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Forester HYSA Arbitrage Dashboard</title>
+    <title>Forester Strategy: Master Dashboard</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root {
@@ -15,7 +15,8 @@
             --card-bg: #ffffff;
             --text-main: #334155;
             --text-muted: #64748b;
-            --highlight-bg: #f1f5f9;
+            --hub-color: #8b5cf6;
+            --vault-color: #f59e0b;
         }
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
@@ -25,40 +26,50 @@
             padding: 2rem;
             margin: 0;
         }
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-        .header {
-            text-align: center;
-            margin-bottom: 2rem;
-        }
-        .header h1 {
-            color: var(--primary);
-            margin-bottom: 0.5rem;
-        }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .header { text-align: center; margin-bottom: 2rem; }
+        .header h1 { color: var(--primary); margin-bottom: 0.5rem; }
         
-        /* Master Parameters Banner */
-        .hysa-banner {
-            background: var(--primary);
-            color: white;
+        /* Master Toggle Section */
+        .toggle-section {
+            background: var(--card-bg);
             padding: 1.5rem;
             border-radius: 12px;
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
             margin-bottom: 2rem;
-            display: flex;
-            justify-content: space-around;
-            align-items: center;
-            flex-wrap: wrap;
-            font-size: 1.15rem;
+            text-align: center;
+            border-top: 4px solid var(--secondary);
         }
-        .hysa-banner div { margin: 0.5rem; }
-        .hysa-banner div strong { color: #93c5fd; }
+        .toggle-btn {
+            background-color: #e2e8f0;
+            color: var(--text-main);
+            border: none;
+            padding: 0.75rem 1.5rem;
+            font-size: 1rem;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            margin: 0 0.5rem;
+            transition: all 0.2s;
+        }
+        .toggle-btn.active {
+            background-color: var(--primary);
+            color: white;
+            box-shadow: 0 4px 6px -1px rgba(15, 23, 42, 0.4);
+        }
+        .master-stats {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            margin-top: 1.5rem;
+            font-size: 1.1rem;
+        }
+        .master-stats span strong { color: var(--secondary); }
 
         /* Dashboard Grid */
         .dashboard-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
             gap: 1.5rem;
             margin-bottom: 3rem;
         }
@@ -67,89 +78,48 @@
             border-radius: 12px;
             padding: 1.5rem;
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-            border-top: 4px solid var(--primary);
             display: flex;
             flex-direction: column;
+            border-top: 4px solid #cbd5e1;
         }
-        .card-title {
-            font-size: 1.15rem;
-            font-weight: 700;
-            color: var(--primary);
-            margin-bottom: 0.25rem;
-        }
-        .card-subtitle {
-            font-size: 0.9rem;
-            color: var(--text-muted);
-            margin-bottom: 1rem;
-            padding-bottom: 0.75rem;
-            border-bottom: 1px solid #e2e8f0;
-        }
+        .card-title { font-size: 1.15rem; font-weight: 700; color: var(--primary); }
+        .card-subtitle { font-size: 0.9rem; color: var(--text-muted); margin-bottom: 1rem; padding-bottom: 0.75rem; border-bottom: 1px solid #e2e8f0; }
 
         /* Sliders */
-        .control-group {
-            margin-bottom: 1.25rem;
-        }
-        .slider-label {
-            display: flex;
-            justify-content: space-between;
-            font-size: 0.95rem;
-            font-weight: 600;
-            margin-bottom: 0.25rem;
-        }
-        input[type="range"] {
-            width: 100%;
-            cursor: pointer;
-            margin-bottom: 0.25rem;
-        }
+        .control-group { margin-bottom: 1.25rem; }
+        .slider-label { display: flex; justify-content: space-between; font-size: 0.9rem; font-weight: 600; margin-bottom: 0.25rem; }
+        input[type="range"] { width: 100%; cursor: pointer; }
 
         /* Results Display */
-        .results-section {
-            margin-top: auto;
-            border-top: 1px solid #e2e8f0;
-            padding-top: 1rem;
-        }
-        .data-row {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 0.5rem;
-            font-size: 0.95rem;
-        }
+        .results-section { margin-top: auto; padding-top: 1rem; border-top: 1px solid #e2e8f0; }
+        .data-row { display: flex; justify-content: space-between; margin-bottom: 0.5rem; font-size: 0.95rem; }
         .data-label { font-weight: 500; }
         .data-value { font-weight: 600; }
         .highlight-green { color: var(--success); }
         .highlight-red { color: var(--danger); }
         
-        /* Split vs Combined Boxes */
-        .strategy-box {
-            background-color: var(--highlight-bg);
-            border-radius: 8px;
-            padding: 1rem;
-            margin-top: 1rem;
-            border-left: 3px solid var(--secondary);
-        }
-        .strategy-box-title {
-            font-size: 0.9rem;
-            font-weight: 700;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            margin-bottom: 0.5rem;
-        }
-        .final-total {
-            margin-top: 0.75rem;
-            padding-top: 0.75rem;
-            border-top: 2px dashed #cbd5e1;
-            font-size: 1.05rem;
-            color: var(--primary);
-        }
-
-        /* Chart */
+        /* Chart Section */
         .chart-container {
             background: var(--card-bg);
-            padding: 1.5rem;
+            padding: 2rem;
             border-radius: 12px;
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
             margin-bottom: 3rem;
+        }
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+        .chart-header select {
+            padding: 0.5rem 1rem;
+            font-size: 1rem;
+            border-radius: 6px;
+            border: 1px solid #cbd5e1;
+            cursor: pointer;
         }
     </style>
 </head>
@@ -158,191 +128,189 @@
 <div class="container">
     <div class="header">
         <h1>Forester Acquisition Strategy</h1>
-        <p>Mathematical Proof: Split Accounts vs. Combined Account</p>
+        <p>Dynamic Analysis: HYSA Payment Hub Arbitrage</p>
     </div>
 
-    <div class="hysa-banner">
-        <div>Total Liquid Capital: <strong>$45,000</strong></div>
-        <div>Default Contribution: <strong>$600/mo</strong></div>
-        <div>HYSA Yield: <strong>3.25% APY</strong></div>
+    <div class="toggle-section">
+        <button class="toggle-btn active" id="btn-combined" onclick="setStrategy('combined')">View as Single $45k Account</button>
+        <button class="toggle-btn" id="btn-split" onclick="setStrategy('split')">View as Split $20k + $25k Accounts</button>
+        
+        <div class="master-stats" id="master-stats">
+            </div>
     </div>
 
     <div class="dashboard-grid" id="dashboard">
         </div>
 
     <div class="chart-container">
-        <h2 style="margin-top: 0; color: var(--primary);">Total Capital Growth Over 72 Months</h2>
-        <p style="color: var(--text-muted); font-size: 0.9rem;">This chart tracks your Total Liquid Capital (Vault + Hub). As proven in the cards above, the math is identical regardless of how you structure the accounts.</p>
+        <div class="chart-header">
+            <div>
+                <h2 style="margin: 0; color: var(--primary);">Account Trajectory (72 Months)</h2>
+                <p style="margin: 0; color: var(--text-muted); font-size: 0.95rem;" id="chart-desc">Select a car below to see exactly how your capital performs over 6 years.</p>
+            </div>
+            <select id="chartScenarioSelect" onchange="updateChart()"></select>
+        </div>
         <canvas id="hysaChart" height="100"></canvas>
     </div>
 </div>
 
 <script>
-    // --- Constants ---
     const hysaApy = 0.0325;
-    const defaultContrib = 600;
+    let currentStrategy = 'combined'; // 'combined' or 'split'
     
-    // The 4 Scenarios
-    const scenariosData = [
-        { id: 0, title: "Sport Hybrid", subtitle: "1.9% APR | 72 Months", apr: 0.019, months: 72, minOtd: 40000, maxOtd: 41500, currentOtd: 40000, currentContrib: defaultContrib, color: '#3b82f6' },
-        { id: 1, title: "Sport Hybrid", subtitle: "0.9% APR | 36 Months", apr: 0.009, months: 36, minOtd: 40000, maxOtd: 41500, currentOtd: 40000, currentContrib: defaultContrib, color: '#10b981' },
-        { id: 2, title: "Sport Onyx Gas", subtitle: "1.9% APR | 72 Months", apr: 0.019, months: 72, minOtd: 38500, maxOtd: 39500, currentOtd: 38500, currentContrib: defaultContrib, color: '#8b5cf6' },
-        { id: 3, title: "Sport Onyx Gas", subtitle: "0.9% APR | 36 Months", apr: 0.009, months: 36, minOtd: 38500, maxOtd: 39500, currentOtd: 38500, currentContrib: defaultContrib, color: '#f59e0b' }
+    // Core Data
+    const scenarios = [
+        { id: 0, title: "Sport Hybrid", subtitle: "1.9% APR | 72 Mos", apr: 0.019, months: 72, minOtd: 40000, maxOtd: 41500, currentOtd: 40000, currentContrib: 600, color: '#3b82f6' },
+        { id: 1, title: "Sport Hybrid", subtitle: "0.9% APR | 36 Mos", apr: 0.009, months: 36, minOtd: 40000, maxOtd: 41500, currentOtd: 40000, currentContrib: 600, color: '#10b981' },
+        { id: 2, title: "Sport Onyx Gas", subtitle: "1.9% APR | 72 Mos", apr: 0.019, months: 72, minOtd: 38500, maxOtd: 39500, currentOtd: 38500, currentContrib: 600, color: '#8b5cf6' },
+        { id: 3, title: "Sport Onyx Gas", subtitle: "0.9% APR | 36 Mos", apr: 0.009, months: 36, minOtd: 38500, maxOtd: 39500, currentOtd: 38500, currentContrib: 600, color: '#f59e0b' }
     ];
 
-    // --- DOM Elements ---
-    const dashboard = document.getElementById('dashboard');
+    const formatCurr = (num) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(num);
+
     let hysaChart;
 
-    // --- Formatters ---
-    const formatCurrency = (num) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(num);
-    const formatExact = (num) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(num);
+    function setStrategy(strategy) {
+        currentStrategy = strategy;
+        document.getElementById('btn-combined').classList.toggle('active', strategy === 'combined');
+        document.getElementById('btn-split').classList.toggle('active', strategy === 'split');
+        
+        const statsDiv = document.getElementById('master-stats');
+        if (strategy === 'combined') {
+            statsDiv.innerHTML = `<span>Starting Pool: <strong>$45,000</strong></span> <span>HYSA Yield: <strong>3.25% APY</strong></span>`;
+        } else {
+            statsDiv.innerHTML = `<span>Car Hub: <strong>$20,000</strong></span> <span>Untouched Vault: <strong>$25,000</strong></span> <span>HYSA Yield: <strong>3.25% APY</strong></span>`;
+        }
+        
+        renderCards();
+        updateChart();
+    }
 
-    // --- Core Calculation Logic ---
-    function calculateMath(scenario) {
+    function calculateScenario(scenario) {
         const monthlyRate = scenario.apr / 12;
         const autoPayment = (scenario.currentOtd * monthlyRate) / (1 - Math.pow(1 + monthlyRate, -scenario.months));
 
-        // Start Balances
-        let combinedBal = 45000;
-        let hubBal = 20000;
-        let vaultBal = 25000;
-        
-        let chartDataTotal = [45000];
+        let combinedBal = 45000, hubBal = 20000, vaultBal = 25000;
+        let chartCombined = [45000], chartHub = [20000], chartVault = [25000], chartTotal = [45000];
 
-        // Simulate 72 months
         for (let i = 1; i <= 72; i++) {
             let activePayment = (i <= scenario.months) ? autoPayment : 0;
-            let currentContrib = scenario.currentContrib;
+            
+            // Combined
+            combinedBal += combinedBal * (hysaApy / 12) + scenario.currentContrib - activePayment;
+            chartCombined.push(combinedBal);
 
-            // 1. Combined Account Math ($45k + Contributions - Payment)
-            combinedBal += combinedBal * (hysaApy / 12);
-            combinedBal += currentContrib - activePayment;
-
-            // 2. Split Account Math 
-            // Vault ($25k + NO contributions)
-            vaultBal += vaultBal * (hysaApy / 12);
-            // Hub ($20k + Contributions - Payment)
-            hubBal += hubBal * (hysaApy / 12);
-            hubBal += currentContrib - activePayment;
-
-            chartDataTotal.push(combinedBal);
+            // Split
+            vaultBal += vaultBal * (hysaApy / 12); // Vault grows untouched
+            hubBal += hubBal * (hysaApy / 12) + scenario.currentContrib - activePayment; // Hub takes the hit
+            
+            chartVault.push(vaultBal);
+            chartHub.push(hubBal);
+            chartTotal.push(vaultBal + hubBal);
         }
 
         return {
             autoPayment,
-            finalCombined: combinedBal,
-            finalHub: hubBal,
-            finalVault: vaultBal,
-            finalSplitTotal: hubBal + vaultBal, // This will match finalCombined
-            monthlyDrainGain: scenario.currentContrib - autoPayment,
-            chartDataTotal
+            endCombined: chartCombined[scenario.months],
+            endHub: chartHub[scenario.months],
+            endVault: chartVault[scenario.months],
+            endTotal: chartTotal[scenario.months],
+            chartCombined, chartHub, chartVault, chartTotal
         };
     }
 
-    // --- UI Generation & Updates ---
-    function renderDashboard() {
-        dashboard.innerHTML = '';
+    function renderCards() {
+        const dashboard = document.getElementById('dashboard');
+        const select = document.getElementById('chartScenarioSelect');
         
-        scenariosData.forEach(scenario => {
+        // Preserve dropdown selection if it exists
+        const currentSelection = select.value || '0';
+        
+        dashboard.innerHTML = '';
+        select.innerHTML = '';
+
+        scenarios.forEach(s => {
+            // Populate Dropdown
+            select.innerHTML += `<option value="${s.id}">${s.title} (${s.subtitle})</option>`;
+            
+            const res = calculateScenario(s);
             const card = document.createElement('div');
             card.className = 'card';
-            card.style.borderTopColor = scenario.color;
+            card.style.borderTopColor = s.color;
             
+            let resultsHTML = '';
+            if (currentStrategy === 'combined') {
+                resultsHTML = `
+                    <div class="data-row"><span class="data-label">Monthly Car Payment:</span> <span class="data-value">${formatCurr(res.autoPayment)}</span></div>
+                    <div class="data-row" style="margin-top: 1rem; padding-top: 1rem; border-top: 2px dashed #e2e8f0;">
+                        <span class="data-label">Account Balance at Month ${s.months}:</span>
+                        <span class="data-value highlight-green">${formatCurr(res.endCombined)}</span>
+                    </div>
+                `;
+            } else {
+                resultsHTML = `
+                    <div class="data-row"><span class="data-label">Monthly Car Payment:</span> <span class="data-value">${formatCurr(res.autoPayment)}</span></div>
+                    <div class="data-row" style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #e2e8f0;">
+                        <span class="data-label">Vault Balance (Month ${s.months}):</span> <span class="data-value" style="color: var(--vault-color);">${formatCurr(res.endVault)}</span>
+                    </div>
+                    <div class="data-row">
+                        <span class="data-label">Hub Balance (Month ${s.months}):</span> <span class="data-value" style="color: var(--hub-color);">${formatCurr(res.endHub)}</span>
+                    </div>
+                    <div class="data-row" style="margin-top: 0.5rem; padding-top: 0.5rem; border-top: 2px dashed #e2e8f0;">
+                        <span class="data-label">Total Liquid Net Worth:</span> <span class="data-value highlight-green">${formatCurr(res.endTotal)}</span>
+                    </div>
+                `;
+            }
+
             card.innerHTML = `
-                <div class="card-title">${scenario.title}</div>
-                <div class="card-subtitle">${scenario.subtitle}</div>
-                
+                <div class="card-title">${s.title}</div>
+                <div class="card-subtitle">${s.subtitle}</div>
                 <div class="control-group">
-                    <div class="slider-label">
-                        <span>OTD Price</span>
-                        <span id="otd-display-${scenario.id}" class="highlight-green">${formatCurrency(scenario.currentOtd)}</span>
-                    </div>
-                    <input type="range" id="otd-slider-${scenario.id}" min="${scenario.minOtd}" max="${scenario.maxOtd}" step="100" value="${scenario.currentOtd}">
+                    <div class="slider-label"><span>OTD Price</span> <span id="otd-val-${s.id}" class="highlight-green">${formatCurr(s.currentOtd)}</span></div>
+                    <input type="range" id="otd-${s.id}" min="${s.minOtd}" max="${s.maxOtd}" step="100" value="${s.currentOtd}">
                 </div>
-
                 <div class="control-group">
-                    <div class="slider-label">
-                        <span>Combined Contribution</span>
-                        <span id="contrib-display-${scenario.id}" class="highlight-green">${formatCurrency(scenario.currentContrib)}/mo</span>
-                    </div>
-                    <input type="range" id="contrib-slider-${scenario.id}" min="400" max="1200" step="10" value="${scenario.currentContrib}">
+                    <div class="slider-label"><span>Monthly Contrib.</span> <span id="con-val-${s.id}" class="highlight-green">${formatCurr(s.currentContrib)}/mo</span></div>
+                    <input type="range" id="con-${s.id}" min="400" max="1200" step="10" value="${s.currentContrib}">
                 </div>
-
-                <div class="results-section" id="results-${scenario.id}">
-                    </div>
+                <div class="results-section" id="res-${s.id}">${resultsHTML}</div>
             `;
             dashboard.appendChild(card);
 
-            document.getElementById(`otd-slider-${scenario.id}`).addEventListener('input', (e) => {
-                scenario.currentOtd = parseFloat(e.target.value);
-                document.getElementById(`otd-display-${scenario.id}`).innerText = formatCurrency(scenario.currentOtd);
-                updateAllMath();
-            });
-
-            document.getElementById(`contrib-slider-${scenario.id}`).addEventListener('input', (e) => {
-                scenario.currentContrib = parseFloat(e.target.value);
-                document.getElementById(`contrib-display-${scenario.id}`).innerText = `${formatCurrency(scenario.currentContrib)}/mo`;
-                updateAllMath();
-            });
+            // Listeners
+            document.getElementById(`otd-${s.id}`).addEventListener('input', (e) => { s.currentOtd = parseFloat(e.target.value); renderCards(); updateChart(); });
+            document.getElementById(`con-${s.id}`).addEventListener('input', (e) => { s.currentContrib = parseFloat(e.target.value); renderCards(); updateChart(); });
         });
 
-        updateAllMath();
+        select.value = currentSelection;
     }
 
-    function updateAllMath() {
-        let chartDatasets = [];
-
-        scenariosData.forEach(scenario => {
-            const res = calculateMath(scenario);
-            
-            const resultsContainer = document.getElementById(`results-${scenario.id}`);
-            resultsContainer.innerHTML = `
-                <div class="data-row">
-                    <span class="data-label">Monthly Car Payment:</span>
-                    <span class="data-value">${formatExact(res.autoPayment)}</span>
-                </div>
-                
-                <div class="strategy-box">
-                    <div class="strategy-box-title">Strategy A: Single $45k Account</div>
-                    <div class="data-row">
-                        <span class="data-label">Final Balance (Month 72):</span>
-                        <span class="data-value">${formatExact(res.finalCombined)}</span>
-                    </div>
-                </div>
-
-                <div class="strategy-box">
-                    <div class="strategy-box-title">Strategy B: Split Accounts ($20k + $25k)</div>
-                    <div class="data-row">
-                        <span class="data-label">$25k Vault (No Contribs):</span>
-                        <span class="data-value">${formatExact(res.finalVault)}</span>
-                    </div>
-                    <div class="data-row">
-                        <span class="data-label">$20k Hub (+ ${formatCurrency(scenario.currentContrib)}/mo):</span>
-                        <span class="data-value">${formatExact(res.finalHub)}</span>
-                    </div>
-                    <div class="data-row final-total">
-                        <span class="data-label">Total Split Balance:</span>
-                        <span class="data-value highlight-green">${formatExact(res.finalSplitTotal)}</span>
-                    </div>
-                </div>
-            `;
-
-            chartDatasets.push({
-                label: `${scenario.title} (${scenario.months}m)`,
-                data: res.chartDataTotal,
-                borderColor: scenario.color,
-                backgroundColor: scenario.color + '20',
-                fill: false,
-                tension: 0.1
-            });
-        });
-
-        updateChart(chartDatasets);
-    }
-
-    function updateChart(datasets) {
+    function updateChart() {
+        const selectedId = parseInt(document.getElementById('chartScenarioSelect').value);
+        const s = scenarios.find(x => x.id === selectedId);
+        const res = calculateScenario(s);
         const labels = Array.from({length: 73}, (_, i) => `Mo ${i}`);
+        
+        let datasets = [];
+        
+        if (currentStrategy === 'combined') {
+            datasets = [{
+                label: 'Total Account Balance',
+                data: res.chartCombined,
+                borderColor: s.color,
+                backgroundColor: s.color + '20',
+                fill: true, tension: 0.1
+            }];
+            document.getElementById('chart-desc').innerText = `Graphing the single $45k account for the ${s.title} (${s.months}m loan).`;
+        } else {
+            datasets = [
+                { label: '$25k Vault (Untouched)', data: res.chartVault, borderColor: '#f59e0b', borderDash: [5, 5], tension: 0.1 },
+                { label: '$20k Hub (Paying Loan)', data: res.chartHub, borderColor: '#8b5cf6', fill: true, backgroundColor: '#8b5cf620', tension: 0.1 },
+                { label: 'Total Net Worth', data: res.chartTotal, borderColor: '#10b981', tension: 0.1, borderWidth: 3 }
+            ];
+            document.getElementById('chart-desc').innerText = `Graphing the isolated Hub and Vault accounts for the ${s.title} (${s.months}m loan).`;
+        }
+
         if (hysaChart) {
             hysaChart.data.labels = labels;
             hysaChart.data.datasets = datasets;
@@ -350,21 +318,18 @@
         } else {
             const ctx = document.getElementById('hysaChart').getContext('2d');
             hysaChart = new Chart(ctx, {
-                type: 'line',
-                data: { labels, datasets },
+                type: 'line', data: { labels, datasets },
                 options: {
-                    responsive: true,
-                    interaction: { mode: 'index', intersect: false },
-                    scales: { y: { ticks: { callback: function(value) { return '$' + value.toLocaleString(); } } } },
-                    plugins: { tooltip: { callbacks: { label: function(context) { return context.dataset.label + ': ' + formatExact(context.parsed.y); } } } }
+                    responsive: true, interaction: { mode: 'index', intersect: false },
+                    scales: { y: { ticks: { callback: (v) => '$' + v.toLocaleString() } } },
+                    plugins: { tooltip: { callbacks: { label: (c) => c.dataset.label + ': ' + formatCurr(c.parsed.y) } } }
                 }
             });
         }
     }
 
-    // --- Start ---
-    renderDashboard();
-
+    // Init
+    setStrategy('combined');
 </script>
 </body>
 </html>
