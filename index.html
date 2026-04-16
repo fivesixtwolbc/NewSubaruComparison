@@ -1,335 +1,186 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Forester Strategy: Master Dashboard</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+import streamlit as st
+import pandas as pd
+import plotly.graph_objects as go
+
+# --- PAGE CONFIGURATION & AESTHETICS ---
+st.set_page_config(page_title="Onyx Payment Hub", layout="wide")
+
+st.markdown("""
     <style>
-        :root {
-            --primary: #0f172a;
-            --secondary: #3b82f6;
-            --success: #10b981;
-            --danger: #ef4444;
-            --background: #f8fafc;
-            --card-bg: #ffffff;
-            --text-main: #334155;
-            --text-muted: #64748b;
-            --hub-color: #8b5cf6;
-            --vault-color: #f59e0b;
-        }
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background-color: var(--background);
-            color: var(--text-main);
-            line-height: 1.5;
-            padding: 2rem;
-            margin: 0;
-        }
-        .container { max-width: 1200px; margin: 0 auto; }
-        .header { text-align: center; margin-bottom: 2rem; }
-        .header h1 { color: var(--primary); margin-bottom: 0.5rem; }
-        
-        /* Master Toggle Section */
-        .toggle-section {
-            background: var(--card-bg);
-            padding: 1.5rem;
-            border-radius: 12px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-            margin-bottom: 2rem;
-            text-align: center;
-            border-top: 4px solid var(--secondary);
-        }
-        .toggle-btn {
-            background-color: #e2e8f0;
-            color: var(--text-main);
-            border: none;
-            padding: 0.75rem 1.5rem;
-            font-size: 1rem;
-            font-weight: 600;
-            border-radius: 8px;
-            cursor: pointer;
-            margin: 0 0.5rem;
-            transition: all 0.2s;
-        }
-        .toggle-btn.active {
-            background-color: var(--primary);
-            color: white;
-            box-shadow: 0 4px 6px -1px rgba(15, 23, 42, 0.4);
-        }
-        .master-stats {
-            display: flex;
-            justify-content: center;
-            gap: 2rem;
-            margin-top: 1.5rem;
-            font-size: 1.1rem;
-        }
-        .master-stats span strong { color: var(--secondary); }
-
-        /* Dashboard Grid */
-        .dashboard-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-            gap: 1.5rem;
-            margin-bottom: 3rem;
-        }
-        .card {
-            background-color: var(--card-bg);
-            border-radius: 12px;
-            padding: 1.5rem;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-            display: flex;
-            flex-direction: column;
-            border-top: 4px solid #cbd5e1;
-        }
-        .card-title { font-size: 1.15rem; font-weight: 700; color: var(--primary); }
-        .card-subtitle { font-size: 0.9rem; color: var(--text-muted); margin-bottom: 1rem; padding-bottom: 0.75rem; border-bottom: 1px solid #e2e8f0; }
-
-        /* Sliders */
-        .control-group { margin-bottom: 1.25rem; }
-        .slider-label { display: flex; justify-content: space-between; font-size: 0.9rem; font-weight: 600; margin-bottom: 0.25rem; }
-        input[type="range"] { width: 100%; cursor: pointer; }
-
-        /* Results Display */
-        .results-section { margin-top: auto; padding-top: 1rem; border-top: 1px solid #e2e8f0; }
-        .data-row { display: flex; justify-content: space-between; margin-bottom: 0.5rem; font-size: 0.95rem; }
-        .data-label { font-weight: 500; }
-        .data-value { font-weight: 600; }
-        .highlight-green { color: var(--success); }
-        .highlight-red { color: var(--danger); }
-        
-        /* Chart Section */
-        .chart-container {
-            background: var(--card-bg);
-            padding: 2rem;
-            border-radius: 12px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-            margin-bottom: 3rem;
-        }
-        .chart-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1.5rem;
-            flex-wrap: wrap;
-            gap: 1rem;
-        }
-        .chart-header select {
-            padding: 0.5rem 1rem;
-            font-size: 1rem;
-            border-radius: 6px;
-            border: 1px solid #cbd5e1;
-            cursor: pointer;
-        }
+    .stApp { background-color: #121212; }
+    h1, h2, h3, p { color: #F8F9FA; }
+    .metric-value-blue { color: #00E5FF; font-size: 2.5rem; font-weight: bold; }
+    .metric-value-purple { color: #B026FF; font-size: 2.5rem; font-weight: bold; }
+    .metric-value-green { color: #39FF14; font-size: 2.5rem; font-weight: bold; }
+    .metric-value-silver { color: #C0C0C0; font-size: 2.5rem; font-weight: bold; }
+    .metric-label { font-size: 1.2rem; color: #A0A0A0; }
     </style>
-</head>
-<body>
+""", unsafe_allow_html=True)
 
-<div class="container">
-    <div class="header">
-        <h1>Forester Acquisition Strategy</h1>
-        <p>Dynamic Analysis: HYSA Payment Hub Arbitrage</p>
-    </div>
+st.title("⚡ Onyx Payment Hub: Arbitrage Tracker")
+st.markdown("Monitoring the 36-month $0-down capital protection strategy.")
+st.divider()
 
-    <div class="toggle-section">
-        <button class="toggle-btn active" id="btn-combined" onclick="setStrategy('combined')">View as Single $45k Account</button>
-        <button class="toggle-btn" id="btn-split" onclick="setStrategy('split')">View as Split $20k + $25k Accounts</button>
-        
-        <div class="master-stats" id="master-stats">
-            </div>
-    </div>
+# --- SIDEBAR / CONTROLS ---
+st.sidebar.header("Strategy Parameters")
+hysa_replenishment = st.sidebar.slider(
+    "Monthly HYSA Replenishment ($)", 
+    min_value=450, max_value=650, value=600, step=10
+)
 
-    <div class="dashboard-grid" id="dashboard">
-        </div>
+st.sidebar.markdown("---")
+st.sidebar.header("Tax Adjuster (Real Yield)")
+fed_tax = st.sidebar.slider("Federal Tax Bracket (%)", min_value=10, max_value=37, value=24, step=2)
+state_tax = st.sidebar.slider("State Tax Bracket (%)", min_value=0, max_value=13, value=9, step=1)
 
-    <div class="chart-container">
-        <div class="chart-header">
-            <div>
-                <h2 style="margin: 0; color: var(--primary);">Account Trajectory (72 Months)</h2>
-                <p style="margin: 0; color: var(--text-muted); font-size: 0.95rem;" id="chart-desc">Select a car below to see exactly how your capital performs over 6 years.</p>
-            </div>
-            <select id="chartScenarioSelect" onchange="updateChart()"></select>
-        </div>
-        <canvas id="hysaChart" height="100"></canvas>
-    </div>
-</div>
+st.sidebar.markdown("---")
+st.sidebar.header("Recovery Phase")
+post_loan_replenishment = st.sidebar.slider(
+    "Post-Loan Monthly Contribution ($)", 
+    min_value=400, max_value=600, value=500, step=10
+)
 
-<script>
-    const hysaApy = 0.0325;
-    let currentStrategy = 'combined'; // 'combined' or 'split'
+# --- CONSTANTS & CALCULATIONS ---
+# Sport Onyx OTD Specifics
+loan_principal = 38500.00
+loan_apr = 0.009
+loan_months = 36
+monthly_payment = 1084.31  # Mathematical payment for $38.5k @ 0.9% for 36mo
+
+hysa_initial = 22000.00
+hysa_apy = 0.0325
+tax_rate = (fed_tax + state_tax) / 100
+effective_apy = hysa_apy * (1 - tax_rate)
+
+# Forester Value Projection
+initial_vehicle_value = 35500.00  # Est. pre-tax/fee market value
+annual_depreciation_rate = 0.15 
+
+# --- AMORTIZATION ENGINE ---
+months = []
+loan_balances = []
+hysa_balances = []
+vehicle_values = []
+cumulative_loan_interest = []
+cumulative_hysa_interest_net = []
+
+current_loan = loan_principal
+current_hysa = hysa_initial
+current_vehicle_value = initial_vehicle_value
+total_loan_int = 0.0
+total_hysa_int_net = 0.0
+
+start_date = pd.to_datetime("2026-05-15")
+equity_crossover_date = "Not Reached"
+capital_crossover_date = "Not Reached"
+
+for i in range(loan_months):
+    # Loan Math
+    interest_payment = current_loan * (loan_apr / 12)
+    principal_payment = monthly_payment - interest_payment
+    current_loan -= principal_payment
+    total_loan_int += interest_payment
     
-    // Core Data
-    const scenarios = [
-        { id: 0, title: "Sport Hybrid", subtitle: "1.9% APR | 72 Mos", apr: 0.019, months: 72, minOtd: 40000, maxOtd: 41500, currentOtd: 40000, currentContrib: 600, color: '#3b82f6' },
-        { id: 1, title: "Sport Hybrid", subtitle: "0.9% APR | 36 Mos", apr: 0.009, months: 36, minOtd: 40000, maxOtd: 41500, currentOtd: 40000, currentContrib: 600, color: '#10b981' },
-        { id: 2, title: "Sport Onyx Gas", subtitle: "1.9% APR | 72 Mos", apr: 0.019, months: 72, minOtd: 38500, maxOtd: 39500, currentOtd: 38500, currentContrib: 600, color: '#8b5cf6' },
-        { id: 3, title: "Sport Onyx Gas", subtitle: "0.9% APR | 36 Mos", apr: 0.009, months: 36, minOtd: 38500, maxOtd: 39500, currentOtd: 38500, currentContrib: 600, color: '#f59e0b' }
-    ];
+    # HYSA Math (After-Tax)
+    hysa_interest_net = current_hysa * (effective_apy / 12)
+    current_hysa = current_hysa - monthly_payment + hysa_replenishment + hysa_interest_net
+    total_hysa_int_net += hysa_interest_net
+    
+    # Vehicle Depreciation
+    current_vehicle_value = current_vehicle_value * (1 - annual_depreciation_rate / 12)
+    
+    # Store Data
+    current_date = start_date + pd.DateOffset(months=i)
+    formatted_date = current_date.strftime('%b %d, %Y')
+    
+    months.append(formatted_date)
+    loan_balances.append(max(0, current_loan))
+    hysa_balances.append(current_hysa)
+    vehicle_values.append(current_vehicle_value)
+    cumulative_loan_interest.append(total_loan_int)
+    cumulative_hysa_interest_net.append(total_hysa_int_net)
+    
+    # Check Crossovers
+    if current_loan < current_vehicle_value and equity_crossover_date == "Not Reached":
+        equity_crossover_date = formatted_date
+    if current_hysa > current_loan and capital_crossover_date == "Not Reached":
+        capital_crossover_date = formatted_date
 
-    const formatCurr = (num) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(num);
+# --- STRATEGY KEY ---
+st.info(f"""
+**🔑 Core Blueprint**
+* **Starting Capital Pool:** ${hysa_initial:,.2f}
+* **Auto-Pay Draw:** ${monthly_payment:,.2f} (Executes on the 15th of every month)
+* **Capital Crossover (HYSA > Debt):** {capital_crossover_date}
+""")
 
-    let hysaChart;
+# --- TOP COMMAND CENTER (WIDGETS) ---
+col1, col2, col3, col4 = st.columns(4)
 
-    function setStrategy(strategy) {
-        currentStrategy = strategy;
-        document.getElementById('btn-combined').classList.toggle('active', strategy === 'combined');
-        document.getElementById('btn-split').classList.toggle('active', strategy === 'split');
-        
-        const statsDiv = document.getElementById('master-stats');
-        if (strategy === 'combined') {
-            statsDiv.innerHTML = `<span>Starting Pool: <strong>$45,000</strong></span> <span>HYSA Yield: <strong>3.25% APY</strong></span>`;
-        } else {
-            statsDiv.innerHTML = `<span>Car Hub: <strong>$20,000</strong></span> <span>Untouched Vault: <strong>$25,000</strong></span> <span>HYSA Yield: <strong>3.25% APY</strong></span>`;
-        }
-        
-        renderCards();
-        updateChart();
-    }
+with col1:
+    st.markdown('<p class="metric-label">Final HYSA Pool</p>', unsafe_allow_html=True)
+    st.markdown(f'<p class="metric-value-blue">${hysa_balances[-1]:,.2f}</p>', unsafe_allow_html=True)
 
-    function calculateScenario(scenario) {
-        const monthlyRate = scenario.apr / 12;
-        const autoPayment = (scenario.currentOtd * monthlyRate) / (1 - Math.pow(1 + monthlyRate, -scenario.months));
+with col2:
+    st.markdown('<p class="metric-label">After-Tax Net Profit</p>', unsafe_allow_html=True)
+    st.markdown(f'<p class="metric-value-green">${total_hysa_int_net - total_loan_int:,.2f}</p>', unsafe_allow_html=True)
 
-        let combinedBal = 45000, hubBal = 20000, vaultBal = 25000;
-        let chartCombined = [45000], chartHub = [20000], chartVault = [25000], chartTotal = [45000];
+with col3:
+    st.markdown('<p class="metric-label">Interest Cost</p>', unsafe_allow_html=True)
+    st.markdown(f'<p class="metric-value-purple">${total_loan_int:,.2f}</p>', unsafe_allow_html=True)
 
-        for (let i = 1; i <= 72; i++) {
-            let activePayment = (i <= scenario.months) ? autoPayment : 0;
-            
-            // Combined
-            combinedBal += combinedBal * (hysaApy / 12) + scenario.currentContrib - activePayment;
-            chartCombined.push(combinedBal);
+with col4:
+    st.markdown('<p class="metric-label">Equity Crossover</p>', unsafe_allow_html=True)
+    st.markdown(f'<p class="metric-value-silver">{equity_crossover_date}</p>', unsafe_allow_html=True)
 
-            // Split
-            vaultBal += vaultBal * (hysaApy / 12); // Vault grows untouched
-            hubBal += hubBal * (hysaApy / 12) + scenario.currentContrib - activePayment; // Hub takes the hit
-            
-            chartVault.push(vaultBal);
-            chartHub.push(hubBal);
-            chartTotal.push(vaultBal + hubBal);
-        }
+st.divider()
 
-        return {
-            autoPayment,
-            endCombined: chartCombined[scenario.months],
-            endHub: chartHub[scenario.months],
-            endVault: chartVault[scenario.months],
-            endTotal: chartTotal[scenario.months],
-            chartCombined, chartHub, chartVault, chartTotal
-        };
-    }
+# --- CROSSOVER VISUALIZER ---
+st.subheader("Capital & Equity Crossover Graph")
+fig = go.Figure()
 
-    function renderCards() {
-        const dashboard = document.getElementById('dashboard');
-        const select = document.getElementById('chartScenarioSelect');
-        
-        // Preserve dropdown selection if it exists
-        const currentSelection = select.value || '0';
-        
-        dashboard.innerHTML = '';
-        select.innerHTML = '';
+fig.add_trace(go.Scatter(x=months, y=loan_balances, name='Loan Balance', line=dict(color='#B026FF', width=3)))
+fig.add_trace(go.Scatter(x=months, y=hysa_balances, name='HYSA Balance', line=dict(color='#00E5FF', width=3)))
+fig.add_trace(go.Scatter(x=months, y=vehicle_values, name='Forester Value', line=dict(color='#C0C0C0', width=2, dash='dash')))
 
-        scenarios.forEach(s => {
-            // Populate Dropdown
-            select.innerHTML += `<option value="${s.id}">${s.title} (${s.subtitle})</option>`;
-            
-            const res = calculateScenario(s);
-            const card = document.createElement('div');
-            card.className = 'card';
-            card.style.borderTopColor = s.color;
-            
-            let resultsHTML = '';
-            if (currentStrategy === 'combined') {
-                resultsHTML = `
-                    <div class="data-row"><span class="data-label">Monthly Car Payment:</span> <span class="data-value">${formatCurr(res.autoPayment)}</span></div>
-                    <div class="data-row" style="margin-top: 1rem; padding-top: 1rem; border-top: 2px dashed #e2e8f0;">
-                        <span class="data-label">Account Balance at Month ${s.months}:</span>
-                        <span class="data-value highlight-green">${formatCurr(res.endCombined)}</span>
-                    </div>
-                `;
-            } else {
-                resultsHTML = `
-                    <div class="data-row"><span class="data-label">Monthly Car Payment:</span> <span class="data-value">${formatCurr(res.autoPayment)}</span></div>
-                    <div class="data-row" style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #e2e8f0;">
-                        <span class="data-label">Vault Balance (Month ${s.months}):</span> <span class="data-value" style="color: var(--vault-color);">${formatCurr(res.endVault)}</span>
-                    </div>
-                    <div class="data-row">
-                        <span class="data-label">Hub Balance (Month ${s.months}):</span> <span class="data-value" style="color: var(--hub-color);">${formatCurr(res.endHub)}</span>
-                    </div>
-                    <div class="data-row" style="margin-top: 0.5rem; padding-top: 0.5rem; border-top: 2px dashed #e2e8f0;">
-                        <span class="data-label">Total Liquid Net Worth:</span> <span class="data-value highlight-green">${formatCurr(res.endTotal)}</span>
-                    </div>
-                `;
-            }
+fig.update_layout(
+    plot_bgcolor='#121212', paper_bgcolor='#121212', font=dict(color='#A0A0A0'),
+    xaxis=dict(showgrid=False), yaxis=dict(gridcolor='#333333', tickprefix="$"),
+    hovermode="x unified", legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
+)
+st.plotly_chart(fig, use_container_width=True)
 
-            card.innerHTML = `
-                <div class="card-title">${s.title}</div>
-                <div class="card-subtitle">${s.subtitle}</div>
-                <div class="control-group">
-                    <div class="slider-label"><span>OTD Price</span> <span id="otd-val-${s.id}" class="highlight-green">${formatCurr(s.currentOtd)}</span></div>
-                    <input type="range" id="otd-${s.id}" min="${s.minOtd}" max="${s.maxOtd}" step="100" value="${s.currentOtd}">
-                </div>
-                <div class="control-group">
-                    <div class="slider-label"><span>Monthly Contrib.</span> <span id="con-val-${s.id}" class="highlight-green">${formatCurr(s.currentContrib)}/mo</span></div>
-                    <input type="range" id="con-${s.id}" min="400" max="1200" step="10" value="${s.currentContrib}">
-                </div>
-                <div class="results-section" id="res-${s.id}">${resultsHTML}</div>
-            `;
-            dashboard.appendChild(card);
+# --- AMORTIZATION TABLE (6-Month Scroll) ---
+st.subheader("36-Month Amortization Schedule")
+schedule_df = pd.DataFrame({
+    "Payment Date": months,
+    "Loan Balance": loan_balances,
+    "Est. Car Value": vehicle_values,
+    "HYSA Balance": hysa_balances,
+    "After-Tax Net Spread": [hysa - loan for hysa, loan in zip(cumulative_hysa_interest_net, cumulative_loan_interest)]
+})
+styled_df = schedule_df.style.format({
+    "Loan Balance": "${:,.2f}", "Est. Car Value": "${:,.2f}", 
+    "HYSA Balance": "${:,.2f}", "After-Tax Net Spread": "${:,.2f}"
+})
+st.dataframe(styled_df, use_container_width=True, hide_index=True, height=260)
 
-            // Listeners
-            document.getElementById(`otd-${s.id}`).addEventListener('input', (e) => { s.currentOtd = parseFloat(e.target.value); renderCards(); updateChart(); });
-            document.getElementById(`con-${s.id}`).addEventListener('input', (e) => { s.currentContrib = parseFloat(e.target.value); renderCards(); updateChart(); });
-        });
+# --- POST-LOAN RECOVERY TRACKER ---
+st.divider()
+st.subheader("Post-Loan Capital Recovery Tracker")
+recovery_balance = hysa_balances[-1]
+recovery_months = 0
+recovery_date = pd.to_datetime(months[-1])
 
-        select.value = currentSelection;
-    }
+if recovery_balance < hysa_initial:
+    while recovery_balance < hysa_initial and recovery_months < 120:
+        recovery_interest = recovery_balance * (effective_apy / 12)
+        recovery_balance += post_loan_replenishment + recovery_interest
+        recovery_months += 1
+        recovery_date += pd.DateOffset(months=1)
 
-    function updateChart() {
-        const selectedId = parseInt(document.getElementById('chartScenarioSelect').value);
-        const s = scenarios.find(x => x.id === selectedId);
-        const res = calculateScenario(s);
-        const labels = Array.from({length: 73}, (_, i) => `Mo ${i}`);
-        
-        let datasets = [];
-        
-        if (currentStrategy === 'combined') {
-            datasets = [{
-                label: 'Total Account Balance',
-                data: res.chartCombined,
-                borderColor: s.color,
-                backgroundColor: s.color + '20',
-                fill: true, tension: 0.1
-            }];
-            document.getElementById('chart-desc').innerText = `Graphing the single $45k account for the ${s.title} (${s.months}m loan).`;
-        } else {
-            datasets = [
-                { label: '$25k Vault (Untouched)', data: res.chartVault, borderColor: '#f59e0b', borderDash: [5, 5], tension: 0.1 },
-                { label: '$20k Hub (Paying Loan)', data: res.chartHub, borderColor: '#8b5cf6', fill: true, backgroundColor: '#8b5cf620', tension: 0.1 },
-                { label: 'Total Net Worth', data: res.chartTotal, borderColor: '#10b981', tension: 0.1, borderWidth: 3 }
-            ];
-            document.getElementById('chart-desc').innerText = `Graphing the isolated Hub and Vault accounts for the ${s.title} (${s.months}m loan).`;
-        }
-
-        if (hysaChart) {
-            hysaChart.data.labels = labels;
-            hysaChart.data.datasets = datasets;
-            hysaChart.update();
-        } else {
-            const ctx = document.getElementById('hysaChart').getContext('2d');
-            hysaChart = new Chart(ctx, {
-                type: 'line', data: { labels, datasets },
-                options: {
-                    responsive: true, interaction: { mode: 'index', intersect: false },
-                    scales: { y: { ticks: { callback: (v) => '$' + v.toLocaleString() } } },
-                    plugins: { tooltip: { callbacks: { label: (c) => c.dataset.label + ': ' + formatCurr(c.parsed.y) } } }
-                }
-            });
-        }
-    }
-
-    // Init
-    setStrategy('combined');
-</script>
-</body>
-</html>
+recovery_table = pd.DataFrame({
+    "Strategic Metric": ["End of Loan HYSA", "Target Capital Pool", "Recovery Contribution", "Months to Recover", "Target Date"],
+    "Projection": [f"${hysa_balances[-1]:,.2f}", f"${hysa_initial:,.2f}", f"${post_loan_replenishment:,.2f}", f"{recovery_months}", recovery_date.strftime('%b %d, %Y')]
+})
+st.table(recovery_table)
